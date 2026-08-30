@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parent Portal — Dignity Mathematics Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Fredoka:wght@600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal-style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="portal-header">
+  <div class="portal-brand">
+    <div class="portal-badge">D</div>
+    <span class="name">Dignity Mathematics Academy</span>
+  </div>
+  <a href="../index.html" class="back">← Back to Website</a>
+</header>
+
+<div class="login-card">
+  <h1>Parent Portal</h1>
+  <p class="sub">Sign in to view your child's results, fees, and school announcements.</p>
+  <form id="loginForm">
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" required placeholder="you@email.com">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" required placeholder="••••••••">
+    </div>
+    <button type="submit" class="btn" id="loginBtn">Sign In</button>
+    <p class="form-note" id="note"></p>
+  </form>
+  <p style="text-align:center;margin-top:20px;font-size:13.5px;color:#8a8d93;">
+    Don't have an account yet? Your login is created by the school office —
+    contact us at <a href="tel:+2347069017716">0706 901 7716</a> to get set up.
+  </p>
+</div>
+
+<script src="supabase-client.js"></script>
+<script>
+  (async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+      if (profile && profile.role === 'parent') window.location.href = 'parent-dashboard.html';
+    }
+  })();
+
+  const form = document.getElementById('loginForm');
+  const note = document.getElementById('note');
+  const btn = document.getElementById('loginBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    note.className = 'form-note';
+    note.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      note.className = 'form-note note-error';
+      note.textContent = error.message;
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+      return;
+    }
+
+    note.className = 'form-note note-success';
+    note.textContent = 'Signed in! Redirecting...';
+    window.location.href = 'parent-dashboard.html';
+  });
+</script>
+
+</body>
+</html>

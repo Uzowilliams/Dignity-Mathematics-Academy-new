@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parent Dashboard — Dignity Mathematics Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Fredoka:wght@600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal-style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="portal-header">
+  <div class="portal-brand">
+    <div class="portal-badge">D</div>
+    <span class="name">Dignity Mathematics Academy — Parent Portal</span>
+  </div>
+  <a href="../index.html" class="back">← Back to Website</a>
+</header>
+
+<div class="portal-wrap">
+  <div class="dash-topbar">
+    <div>
+      <h1>Welcome</h1>
+      <div class="who" id="whoami">Loading...</div>
+    </div>
+    <button class="btn-outline" id="logoutBtn">Sign Out</button>
+  </div>
+
+  <div class="card">
+    <h2>My Children</h2>
+    <p class="placeholder-note">Coming in Phase 3 — your registered children will appear here.</p>
+  </div>
+
+  <div class="card">
+    <h2>Results</h2>
+    <p class="placeholder-note">Coming in Phase 3 — view exam results by term here.</p>
+  </div>
+
+  <div class="card">
+    <h2>Fees</h2>
+    <p class="placeholder-note">Coming in Phase 3 — view fee balance and payment history here.</p>
+  </div>
+
+  <div class="card">
+    <h2>Announcements</h2>
+    <p class="placeholder-note">Coming in Phase 3 — school announcements will appear here.</p>
+  </div>
+</div>
+
+<script src="supabase-client.js"></script>
+<script>
+  (async () => {
+    const profile = await requireLogin('parent', 'parent-login.html');
+    if (!profile) return;
+    document.getElementById('whoami').textContent =
+      `Signed in as ${profile.full_name || 'Parent'}`;
+  })();
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    logout('parent-login.html');
+  });
+</script>
+
+</body>
+</html>

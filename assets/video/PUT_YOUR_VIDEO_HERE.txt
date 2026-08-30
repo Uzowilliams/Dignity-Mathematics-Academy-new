@@ -1,0 +1,21 @@
+HOW TO ADD YOUR HERO VIDEO
+===========================
+
+1. Name your video file exactly:  hero.mp4
+2. Put it in this folder (assets/video/), replacing this text file.
+3. Recommended specs:
+   - Format: MP4 (H.264 codec)
+   - Resolution: 1920x1080 or larger, landscape
+   - Length: 10-20 seconds, looping smoothly (it will auto-repeat)
+   - No audio needed - it plays muted automatically
+   - File size: try to keep it under ~15MB so it loads fast on mobile data
+     (you can compress with HandBrake, or ask me to compress it for you)
+
+4. That's it - the homepage hero will automatically play the video
+   once assets/video/hero.mp4 exists. Until then, it shows the
+   building photo as a fallback.
+
+Content recommendation: a short clip of children actively engaged in
+class (counting, hands raised, working with number blocks) reads best
+for a "Mathematics Academy" - it reinforces the numeracy brand the
+moment someone lands on the page.
