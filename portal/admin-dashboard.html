@@ -137,7 +137,47 @@
 
   <div class="card">
     <h2>Fees</h2>
-    <p class="placeholder-note">Coming next — manage fee records per student here.</p>
+    <div class="field" style="max-width:420px;margin-bottom:20px;">
+      <label for="feeStudentSelect">Select a Student</label>
+      <select id="feeStudentSelect" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+        <option value="">Loading students...</option>
+      </select>
+    </div>
+
+    <div id="feeFormWrap" style="display:none;">
+      <form id="feeForm" style="display:grid;gap:14px;margin-bottom:24px;grid-template-columns:1fr 1fr;">
+        <div class="field">
+          <label for="feeTerm">Term</label>
+          <select id="feeTerm" required style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+            <option value="First Term">First Term</option>
+            <option value="Second Term">Second Term</option>
+            <option value="Third Term">Third Term</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="feeSession">Session</label>
+          <input type="text" id="feeSession" required placeholder="e.g. 2025/2026">
+        </div>
+        <div class="field">
+          <label for="feeDue">Amount Due (₦)</label>
+          <input type="number" id="feeDue" min="0" required placeholder="e.g. 50000">
+        </div>
+        <div class="field">
+          <label for="feePaid">Amount Paid (₦)</label>
+          <input type="number" id="feePaid" min="0" required placeholder="e.g. 30000">
+        </div>
+        <div class="field">
+          <label for="feeDueDate">Due Date</label>
+          <input type="date" id="feeDueDate">
+        </div>
+        <div style="grid-column:1 / -1;">
+          <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="addFeeBtn">Add Fee Record</button>
+          <p class="form-note" id="feeNote"></p>
+        </div>
+      </form>
+      <div id="feeList"></div>
+    </div>
+    <p id="feeNoStudentNote" class="placeholder-note">Select a student above to view or add fee records.</p>
   </div>
 </div>
 
@@ -155,6 +195,7 @@
     loadParentOptions();
     loadStudents();
     loadResultStudentOptions();
+    loadFeeStudentOptions();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -482,6 +523,144 @@
     document.getElementById('resGrade').value = '';
     document.getElementById('resRemarks').value = '';
     loadResults();
+  });
+
+  // ---------- Fees ----------
+  let selectedFeeStudentId = null;
+
+  async function loadFeeStudentOptions() {
+    const select = document.getElementById('feeStudentSelect');
+    const { data, error } = await supabaseClient
+      .from('students')
+      .select('id, full_name, admission_number')
+      .order('full_name', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No students added yet</option>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
+    ).join('');
+  }
+
+  document.getElementById('feeStudentSelect').addEventListener('change', (e) => {
+    selectedFeeStudentId = e.target.value || null;
+    const formWrap = document.getElementById('feeFormWrap');
+    const noStudentNote = document.getElementById('feeNoStudentNote');
+    if (selectedFeeStudentId) {
+      formWrap.style.display = 'block';
+      noStudentNote.style.display = 'none';
+      loadFees();
+    } else {
+      formWrap.style.display = 'none';
+      noStudentNote.style.display = 'block';
+    }
+  });
+
+  function formatNaira(n) {
+    return '₦' + Number(n || 0).toLocaleString('en-NG');
+  }
+
+  async function loadFees() {
+    const listEl = document.getElementById('feeList');
+    listEl.innerHTML = '<p class="placeholder-note">Loading fee records...</p>';
+
+    const { data, error } = await supabaseClient
+      .from('fees')
+      .select('*')
+      .eq('student_id', selectedFeeStudentId)
+      .order('session', { ascending: false })
+      .order('term', { ascending: true });
+
+    if (error) {
+      listEl.innerHTML = `<p class="placeholder-note">Could not load fees: ${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    if (!data || data.length === 0) {
+      listEl.innerHTML = `<p class="placeholder-note">No fee records yet for this student.</p>`;
+      return;
+    }
+
+    listEl.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Session</th><th>Term</th><th>Amount Due</th><th>Amount Paid</th><th>Status</th><th>Due Date</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(f => `
+            <tr>
+              <td>${escapeHtml(f.session)}</td>
+              <td>${escapeHtml(f.term)}</td>
+              <td>${formatNaira(f.amount_due)}</td>
+              <td>${formatNaira(f.amount_paid)}</td>
+              <td><span class="badge-status ${f.status === 'Paid' ? 'badge-paid' : 'badge-outstanding'}">${escapeHtml(f.status)}</span></td>
+              <td>${f.due_date ? formatDate(f.due_date) : '-'}</td>
+              <td><button class="btn-outline delete-fee-btn" data-id="${f.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    document.querySelectorAll('.delete-fee-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this fee record?')) return;
+        const id = btn.getAttribute('data-id');
+        const { error } = await supabaseClient.from('fees').delete().eq('id', id);
+        if (error) { alert('Could not delete: ' + error.message); return; }
+        loadFees();
+      });
+    });
+  }
+
+  document.getElementById('feeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedFeeStudentId) return;
+
+    const note = document.getElementById('feeNote');
+    const btn = document.getElementById('addFeeBtn');
+    const term = document.getElementById('feeTerm').value;
+    const session = document.getElementById('feeSession').value.trim();
+    const amount_due = document.getElementById('feeDue').value;
+    const amount_paid = document.getElementById('feePaid').value;
+    const due_date = document.getElementById('feeDueDate').value || null;
+
+    if (!session || amount_due === '' || amount_paid === '') {
+      note.className = 'form-note note-error';
+      note.textContent = 'Please fill in session, amount due, and amount paid.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    note.className = 'form-note';
+    note.textContent = '';
+
+    const { error } = await supabaseClient.from('fees').insert({
+      student_id: selectedFeeStudentId,
+      term, session,
+      amount_due: Number(amount_due),
+      amount_paid: Number(amount_paid),
+      due_date
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Add Fee Record';
+
+    if (error) {
+      note.className = 'form-note note-error';
+      note.textContent = error.message;
+      return;
+    }
+
+    note.className = 'form-note note-success';
+    note.textContent = 'Fee record added!';
+    document.getElementById('feeDue').value = '';
+    document.getElementById('feePaid').value = '';
+    document.getElementById('feeDueDate').value = '';
+    loadFees();
   });
 </script>
 

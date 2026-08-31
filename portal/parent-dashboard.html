@@ -39,7 +39,7 @@
 
   <div class="card">
     <h2>Fees</h2>
-    <p class="placeholder-note">Coming in Phase 3 — view fee balance and payment history here.</p>
+    <div id="feesWrap"><p class="placeholder-note">Loading...</p></div>
   </div>
 
   <div class="card">
@@ -60,6 +60,7 @@
       `Signed in as ${profile.full_name || 'Parent'}`;
     loadAnnouncements();
     loadChildrenAndResults();
+    loadFees();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -247,6 +248,61 @@
       </div>
     `;
     window.print();
+  }
+
+  function formatNaira(n) {
+    return '₦' + Number(n || 0).toLocaleString('en-NG');
+  }
+
+  async function loadFees() {
+    const feesEl = document.getElementById('feesWrap');
+
+    const { data: children, error: childError } = await supabaseClient
+      .from('students')
+      .select('id, full_name');
+
+    if (childError || !children || children.length === 0) {
+      feesEl.innerHTML = `<p class="placeholder-note">No children linked to your account yet.</p>`;
+      return;
+    }
+
+    const childIds = children.map(c => c.id);
+    const childNameById = Object.fromEntries(children.map(c => [c.id, c.full_name]));
+
+    const { data: fees, error } = await supabaseClient
+      .from('fees')
+      .select('*')
+      .in('student_id', childIds)
+      .order('session', { ascending: false })
+      .order('term', { ascending: true });
+
+    if (error) {
+      feesEl.innerHTML = `<p class="placeholder-note">Could not load fee records.</p>`;
+      return;
+    }
+    if (!fees || fees.length === 0) {
+      feesEl.innerHTML = `<p class="placeholder-note">No fee records yet.</p>`;
+      return;
+    }
+
+    feesEl.innerHTML = `
+      <table>
+        <thead><tr><th>Child</th><th>Session</th><th>Term</th><th>Amount Due</th><th>Amount Paid</th><th>Status</th><th>Due Date</th></tr></thead>
+        <tbody>
+          ${fees.map(f => `
+            <tr>
+              <td>${escapeHtml(childNameById[f.student_id] || 'Unknown')}</td>
+              <td>${escapeHtml(f.session)}</td>
+              <td>${escapeHtml(f.term)}</td>
+              <td>${formatNaira(f.amount_due)}</td>
+              <td>${formatNaira(f.amount_paid)}</td>
+              <td><span class="badge-status ${f.status === 'Paid' ? 'badge-paid' : 'badge-outstanding'}">${escapeHtml(f.status)}</span></td>
+              <td>${f.due_date ? formatDate(f.due_date) : '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
   }
 </script>
 
