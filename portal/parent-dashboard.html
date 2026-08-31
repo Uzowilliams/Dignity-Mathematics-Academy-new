@@ -48,6 +48,9 @@
   </div>
 </div>
 
+<!-- Hidden printable report card, filled in just before printing -->
+<div id="printArea"></div>
+
 <script src="supabase-client.js"></script>
 <script>
   (async () => {
@@ -146,26 +149,104 @@
       return;
     }
 
-    const childNameById = Object.fromEntries(children.map(c => [c.id, c.full_name]));
+    const childNameById = Object.fromEntries(children.map(c => [c.id, c]));
 
-    resultsEl.innerHTML = `
-      <table>
-        <thead><tr><th>Child</th><th>Session</th><th>Term</th><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
-        <tbody>
-          ${results.map(r => `
-            <tr>
-              <td>${escapeHtml(childNameById[r.student_id] || 'Unknown')}</td>
-              <td>${escapeHtml(r.session)}</td>
-              <td>${escapeHtml(r.term)}</td>
-              <td>${escapeHtml(r.subject)}</td>
-              <td>${r.score ?? '-'}</td>
-              <td>${escapeHtml(r.grade || '-')}</td>
-              <td>${escapeHtml(r.remarks || '-')}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+    // Group results by student + session + term (each group = one report card)
+    const groups = {};
+    results.forEach(r => {
+      const key = `${r.student_id}|${r.session}|${r.term}`;
+      if (!groups[key]) {
+        groups[key] = { student_id: r.student_id, session: r.session, term: r.term, rows: [] };
+      }
+      groups[key].rows.push(r);
+    });
+
+    const groupList = Object.values(groups).sort((a, b) => {
+      if (a.session !== b.session) return b.session.localeCompare(a.session);
+      return a.term.localeCompare(b.term);
+    });
+
+    window.__resultGroups = groupList;
+    window.__childrenById = childNameById;
+
+    resultsEl.innerHTML = groupList.map((g, i) => {
+      const child = childNameById[g.student_id];
+      const avg = (g.rows.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / g.rows.length).toFixed(1);
+      return `
+        <div style="border:1px solid var(--paper-dim);border-radius:6px;padding:20px;margin-bottom:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div>
+              <strong style="font-size:16px;">${escapeHtml(child ? child.full_name : 'Unknown')}</strong>
+              <div style="font-size:13.5px;color:#5a5d63;">${escapeHtml(g.term)} · ${escapeHtml(g.session)} · Average: ${avg}</div>
+            </div>
+            <button class="btn-outline print-btn" data-group="${i}" style="padding:8px 18px;font-size:13.5px;">🖨 Print Report Card</button>
+          </div>
+          <table>
+            <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
+            <tbody>
+              ${g.rows.map(r => `
+                <tr>
+                  <td>${escapeHtml(r.subject)}</td>
+                  <td>${r.score ?? '-'}</td>
+                  <td>${escapeHtml(r.grade || '-')}</td>
+                  <td>${escapeHtml(r.remarks || '-')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+
+    document.querySelectorAll('.print-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = window.__resultGroups[Number(btn.getAttribute('data-group'))];
+        printReportCard(group, window.__childrenById[group.student_id]);
+      });
+    });
+  }
+
+  function printReportCard(group, child) {
+    const avg = (group.rows.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / group.rows.length).toFixed(1);
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `
+      <div class="report-card">
+        <div class="rc-header">
+          <div class="rc-badge">D</div>
+          <div class="rc-school-name">Dignity Mathematics Academy</div>
+          <div class="rc-address">46 Ogbudike Street, Okpoko, Onitsha, Anambra State</div>
+          <div class="rc-title">Student Report Card</div>
+        </div>
+        <div class="rc-info">
+          <div><b>Student:</b> ${escapeHtml(child ? child.full_name : 'Unknown')}</div>
+          <div><b>Admission No.:</b> ${escapeHtml(child ? child.admission_number : '-')}</div>
+          <div><b>Program:</b> ${escapeHtml(child ? child.program : '-')}</div>
+          <div><b>Term / Session:</b> ${escapeHtml(group.term)} — ${escapeHtml(group.session)}</div>
+        </div>
+        <table>
+          <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
+          <tbody>
+            ${group.rows.map(r => `
+              <tr>
+                <td>${escapeHtml(r.subject)}</td>
+                <td>${r.score ?? '-'}</td>
+                <td>${escapeHtml(r.grade || '-')}</td>
+                <td>${escapeHtml(r.remarks || '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="rc-info" style="margin-top:16px;">
+          <div><b>Average Score:</b> ${avg}</div>
+          <div><b>Printed on:</b> ${formatDate(new Date().toISOString())}</div>
+        </div>
+        <div class="rc-footer">
+          <div class="rc-signature">Class Teacher</div>
+          <div class="rc-signature">Head Teacher</div>
+        </div>
+      </div>
     `;
+    window.print();
   }
 </script>
 

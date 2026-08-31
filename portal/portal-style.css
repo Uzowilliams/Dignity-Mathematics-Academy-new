@@ -87,6 +87,26 @@ table td{padding:12px;border-bottom:1px solid var(--paper-dim);}
 .badge-paid{background:#E3F5E9;color:var(--success);}
 .badge-outstanding{background:#FDEAEC;color:var(--error);}
 
+#printArea{display:none;}
+@media print {
+  body{background:#fff !important;}
+  body *{visibility:hidden;}
+  #printArea{display:block !important;visibility:visible;position:absolute;top:0;left:0;width:100%;padding:40px;background:#fff;}
+  #printArea *{visibility:visible;}
+  .no-print{display:none !important;}
+}
+.report-card{max-width:720px;margin:0 auto;}
+.report-card .rc-header{text-align:center;border-bottom:3px solid var(--ink);padding-bottom:16px;margin-bottom:20px;}
+.report-card .rc-badge{width:60px;height:60px;margin:0 auto 10px;clip-path:polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:600;font-size:26px;}
+.report-card .rc-school-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;}
+.report-card .rc-address{font-size:13px;color:#5a5d63;margin-top:4px;}
+.report-card .rc-title{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:10px;}
+.report-card .rc-info{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:20px;font-size:14.5px;}
+.report-card .rc-info b{color:var(--ink);}
+.report-card table{width:100%;}
+.report-card .rc-footer{margin-top:32px;display:flex;justify-content:space-between;font-size:13px;color:#5a5d63;}
+.report-card .rc-signature{margin-top:40px;border-top:1px solid #333;padding-top:6px;width:200px;text-align:center;font-size:12.5px;}
+
 @media (max-width:600px){
   .login-card{margin:30px auto;padding:28px;}
 }
