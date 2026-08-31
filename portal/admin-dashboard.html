@@ -88,7 +88,51 @@
 
   <div class="card">
     <h2>Student Results</h2>
-    <p class="placeholder-note">Coming next — add and update results per student here.</p>
+    <div class="field" style="max-width:420px;margin-bottom:20px;">
+      <label for="resStudentSelect">Select a Student</label>
+      <select id="resStudentSelect" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+        <option value="">Loading students...</option>
+      </select>
+    </div>
+
+    <div id="resFormWrap" style="display:none;">
+      <form id="resultForm" style="display:grid;gap:14px;margin-bottom:24px;grid-template-columns:1fr 1fr;">
+        <div class="field">
+          <label for="resTerm">Term</label>
+          <select id="resTerm" required style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+            <option value="First Term">First Term</option>
+            <option value="Second Term">Second Term</option>
+            <option value="Third Term">Third Term</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="resSession">Session</label>
+          <input type="text" id="resSession" required placeholder="e.g. 2025/2026">
+        </div>
+        <div class="field">
+          <label for="resSubject">Subject</label>
+          <input type="text" id="resSubject" required placeholder="e.g. Mathematics">
+        </div>
+        <div class="field">
+          <label for="resScore">Score (out of 100)</label>
+          <input type="number" id="resScore" min="0" max="100" required placeholder="e.g. 85">
+        </div>
+        <div class="field">
+          <label for="resGrade">Grade</label>
+          <input type="text" id="resGrade" required placeholder="e.g. A">
+        </div>
+        <div class="field">
+          <label for="resRemarks">Remarks</label>
+          <input type="text" id="resRemarks" placeholder="e.g. Excellent">
+        </div>
+        <div style="grid-column:1 / -1;">
+          <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="addResultBtn">Add Result</button>
+          <p class="form-note" id="resultNote"></p>
+        </div>
+      </form>
+      <div id="resultList"></div>
+    </div>
+    <p id="resNoStudentNote" class="placeholder-note">Select a student above to view or add results.</p>
   </div>
 
   <div class="card">
@@ -110,6 +154,7 @@
     loadAnnouncements();
     loadParentOptions();
     loadStudents();
+    loadResultStudentOptions();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -302,6 +347,141 @@
     note.textContent = 'Student added!';
     document.getElementById('studentForm').reset();
     loadStudents();
+  });
+
+  // ---------- Results ----------
+  let selectedStudentId = null;
+
+  async function loadResultStudentOptions() {
+    const select = document.getElementById('resStudentSelect');
+    const { data, error } = await supabaseClient
+      .from('students')
+      .select('id, full_name, admission_number')
+      .order('full_name', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No students added yet</option>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
+    ).join('');
+  }
+
+  document.getElementById('resStudentSelect').addEventListener('change', (e) => {
+    selectedStudentId = e.target.value || null;
+    const formWrap = document.getElementById('resFormWrap');
+    const noStudentNote = document.getElementById('resNoStudentNote');
+    if (selectedStudentId) {
+      formWrap.style.display = 'block';
+      noStudentNote.style.display = 'none';
+      loadResults();
+    } else {
+      formWrap.style.display = 'none';
+      noStudentNote.style.display = 'block';
+    }
+  });
+
+  async function loadResults() {
+    const listEl = document.getElementById('resultList');
+    listEl.innerHTML = '<p class="placeholder-note">Loading results...</p>';
+
+    const { data, error } = await supabaseClient
+      .from('results')
+      .select('*')
+      .eq('student_id', selectedStudentId)
+      .order('session', { ascending: false })
+      .order('term', { ascending: true });
+
+    if (error) {
+      listEl.innerHTML = `<p class="placeholder-note">Could not load results: ${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    if (!data || data.length === 0) {
+      listEl.innerHTML = `<p class="placeholder-note">No results recorded yet for this student.</p>`;
+      return;
+    }
+
+    listEl.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Session</th><th>Term</th><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(r => `
+            <tr>
+              <td>${escapeHtml(r.session)}</td>
+              <td>${escapeHtml(r.term)}</td>
+              <td>${escapeHtml(r.subject)}</td>
+              <td>${r.score ?? '-'}</td>
+              <td>${escapeHtml(r.grade || '-')}</td>
+              <td>${escapeHtml(r.remarks || '-')}</td>
+              <td><button class="btn-outline delete-result-btn" data-id="${r.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    document.querySelectorAll('.delete-result-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this result?')) return;
+        const id = btn.getAttribute('data-id');
+        const { error } = await supabaseClient.from('results').delete().eq('id', id);
+        if (error) { alert('Could not delete: ' + error.message); return; }
+        loadResults();
+      });
+    });
+  }
+
+  document.getElementById('resultForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedStudentId) return;
+
+    const note = document.getElementById('resultNote');
+    const btn = document.getElementById('addResultBtn');
+    const term = document.getElementById('resTerm').value;
+    const session = document.getElementById('resSession').value.trim();
+    const subject = document.getElementById('resSubject').value.trim();
+    const score = document.getElementById('resScore').value;
+    const grade = document.getElementById('resGrade').value.trim();
+    const remarks = document.getElementById('resRemarks').value.trim();
+
+    if (!session || !subject || !grade) {
+      note.className = 'form-note note-error';
+      note.textContent = 'Please fill in session, subject, and grade.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    note.className = 'form-note';
+    note.textContent = '';
+
+    const { error } = await supabaseClient.from('results').insert({
+      student_id: selectedStudentId,
+      term, session, subject,
+      score: score ? Number(score) : null,
+      grade, remarks
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Add Result';
+
+    if (error) {
+      note.className = 'form-note note-error';
+      note.textContent = error.message;
+      return;
+    }
+
+    note.className = 'form-note note-success';
+    note.textContent = 'Result added!';
+    document.getElementById('resSubject').value = '';
+    document.getElementById('resScore').value = '';
+    document.getElementById('resGrade').value = '';
+    document.getElementById('resRemarks').value = '';
+    loadResults();
   });
 </script>
 

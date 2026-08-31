@@ -29,12 +29,12 @@
 
   <div class="card">
     <h2>My Children</h2>
-    <p class="placeholder-note">Coming in Phase 3 — your registered children will appear here.</p>
+    <div id="childrenList"><p class="placeholder-note">Loading...</p></div>
   </div>
 
   <div class="card">
     <h2>Results</h2>
-    <p class="placeholder-note">Coming in Phase 3 — view exam results by term here.</p>
+    <div id="resultsWrap"><p class="placeholder-note">Loading...</p></div>
   </div>
 
   <div class="card">
@@ -56,6 +56,7 @@
     document.getElementById('whoami').textContent =
       `Signed in as ${profile.full_name || 'Parent'}`;
     loadAnnouncements();
+    loadChildrenAndResults();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -95,6 +96,76 @@
         <p style="margin:10px 0 0;font-size:14.5px;color:#4a4d54;white-space:pre-wrap;">${escapeHtml(a.body)}</p>
       </div>
     `).join('');
+  }
+
+  async function loadChildrenAndResults() {
+    const childrenEl = document.getElementById('childrenList');
+    const resultsEl = document.getElementById('resultsWrap');
+
+    const { data: children, error } = await supabaseClient
+      .from('students')
+      .select('*')
+      .order('full_name', { ascending: true });
+
+    if (error) {
+      childrenEl.innerHTML = `<p class="placeholder-note">Could not load your children's records.</p>`;
+      resultsEl.innerHTML = '';
+      return;
+    }
+    if (!children || children.length === 0) {
+      childrenEl.innerHTML = `<p class="placeholder-note">No children linked to your account yet. Contact the school office if this seems wrong.</p>`;
+      resultsEl.innerHTML = `<p class="placeholder-note">No children linked yet.</p>`;
+      return;
+    }
+
+    childrenEl.innerHTML = `
+      <table>
+        <thead><tr><th>Name</th><th>Admission No.</th><th>Program</th></tr></thead>
+        <tbody>
+          ${children.map(c => `
+            <tr><td>${escapeHtml(c.full_name)}</td><td>${escapeHtml(c.admission_number)}</td><td>${escapeHtml(c.program)}</td></tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    const childIds = children.map(c => c.id);
+    const { data: results, error: resError } = await supabaseClient
+      .from('results')
+      .select('*')
+      .in('student_id', childIds)
+      .order('session', { ascending: false })
+      .order('term', { ascending: true });
+
+    if (resError) {
+      resultsEl.innerHTML = `<p class="placeholder-note">Could not load results.</p>`;
+      return;
+    }
+    if (!results || results.length === 0) {
+      resultsEl.innerHTML = `<p class="placeholder-note">No results recorded yet.</p>`;
+      return;
+    }
+
+    const childNameById = Object.fromEntries(children.map(c => [c.id, c.full_name]));
+
+    resultsEl.innerHTML = `
+      <table>
+        <thead><tr><th>Child</th><th>Session</th><th>Term</th><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
+        <tbody>
+          ${results.map(r => `
+            <tr>
+              <td>${escapeHtml(childNameById[r.student_id] || 'Unknown')}</td>
+              <td>${escapeHtml(r.session)}</td>
+              <td>${escapeHtml(r.term)}</td>
+              <td>${escapeHtml(r.subject)}</td>
+              <td>${r.score ?? '-'}</td>
+              <td>${escapeHtml(r.grade || '-')}</td>
+              <td>${escapeHtml(r.remarks || '-')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
   }
 </script>
 
