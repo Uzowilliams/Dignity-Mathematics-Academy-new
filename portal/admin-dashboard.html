@@ -50,6 +50,43 @@
   </div>
 
   <div class="card">
+    <h2>Students</h2>
+    <form id="studentForm" style="display:grid;gap:14px;margin-bottom:24px;grid-template-columns:1fr 1fr;">
+      <div class="field">
+        <label for="stName">Full Name</label>
+        <input type="text" id="stName" required placeholder="e.g. David Williams">
+      </div>
+      <div class="field">
+        <label for="stAdm">Admission Number</label>
+        <input type="text" id="stAdm" required placeholder="e.g. DMA/2026/014">
+      </div>
+      <div class="field">
+        <label for="stProgram">Program</label>
+        <select id="stProgram" required style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="Creche">Creche</option>
+          <option value="Day Care">Day Care</option>
+          <option value="Nursery">Nursery</option>
+          <option value="Primary">Primary</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="stParent">Parent Account</label>
+        <select id="stParent" required style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Loading parent accounts...</option>
+        </select>
+      </div>
+      <div style="grid-column:1 / -1;">
+        <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="addStudentBtn">Add Student</button>
+        <p class="form-note" id="studentNote"></p>
+      </div>
+    </form>
+    <p style="font-size:13px;color:#8a8d93;margin:-10px 0 20px;">
+      Don't see a parent listed? They need a Supabase account created first (Authentication &gt; Users &gt; Add User) before they can be linked to a student.
+    </p>
+    <div id="studentList"><p class="placeholder-note">Loading students...</p></div>
+  </div>
+
+  <div class="card">
     <h2>Student Results</h2>
     <p class="placeholder-note">Coming next — add and update results per student here.</p>
   </div>
@@ -71,6 +108,8 @@
     document.getElementById('whoami').textContent =
       `Signed in as ${profile.full_name || 'Admin'} · Staff account`;
     loadAnnouncements();
+    loadParentOptions();
+    loadStudents();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -159,6 +198,110 @@
     document.getElementById('annTitle').value = '';
     document.getElementById('annBody').value = '';
     loadAnnouncements();
+  });
+
+  // ---------- Students ----------
+  async function loadParentOptions() {
+    const select = document.getElementById('stParent');
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'parent')
+      .order('full_name', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No parent accounts found yet</option>';
+      return;
+    }
+
+    select.innerHTML = data.map(p =>
+      `<option value="${p.id}">${escapeHtml(p.full_name || 'Unnamed')} (${escapeHtml(p.email || 'no email')})</option>`
+    ).join('');
+  }
+
+  async function loadStudents() {
+    const listEl = document.getElementById('studentList');
+    const { data, error } = await supabaseClient
+      .from('students')
+      .select('*, profiles(full_name, email)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      listEl.innerHTML = `<p class="placeholder-note">Could not load students: ${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    if (!data || data.length === 0) {
+      listEl.innerHTML = `<p class="placeholder-note">No students added yet.</p>`;
+      return;
+    }
+
+    listEl.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Admission No.</th><th>Program</th><th>Parent</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(s => `
+            <tr data-id="${s.id}">
+              <td>${escapeHtml(s.full_name)}</td>
+              <td>${escapeHtml(s.admission_number)}</td>
+              <td>${escapeHtml(s.program)}</td>
+              <td>${escapeHtml(s.profiles?.full_name || s.profiles?.email || 'Unknown')}</td>
+              <td><button class="btn-outline delete-student-btn" data-id="${s.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    document.querySelectorAll('.delete-student-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this student? This also removes their results and fee records.')) return;
+        const id = btn.getAttribute('data-id');
+        const { error } = await supabaseClient.from('students').delete().eq('id', id);
+        if (error) { alert('Could not delete: ' + error.message); return; }
+        loadStudents();
+      });
+    });
+  }
+
+  document.getElementById('studentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('studentNote');
+    const btn = document.getElementById('addStudentBtn');
+    const full_name = document.getElementById('stName').value.trim();
+    const admission_number = document.getElementById('stAdm').value.trim();
+    const program = document.getElementById('stProgram').value;
+    const parent_id = document.getElementById('stParent').value;
+
+    if (!full_name || !admission_number || !parent_id) {
+      note.className = 'form-note note-error';
+      note.textContent = 'Please fill in all fields and select a parent.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    note.className = 'form-note';
+    note.textContent = '';
+
+    const { error } = await supabaseClient.from('students').insert({
+      full_name, admission_number, program, parent_id
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Add Student';
+
+    if (error) {
+      note.className = 'form-note note-error';
+      note.textContent = error.message;
+      return;
+    }
+
+    note.className = 'form-note note-success';
+    note.textContent = 'Student added!';
+    document.getElementById('studentForm').reset();
+    loadStudents();
   });
 </script>
 
