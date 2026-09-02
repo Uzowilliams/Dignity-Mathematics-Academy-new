@@ -1,0 +1,112 @@
+:root{
+  --navy:#123C7A;
+  --navy-dark:#081A3D;
+  --paper:#FFFFFF;
+  --paper-dim:#EAF4FF;
+  --ink:#0B1E3D;
+  --sky:#5AB8FF;
+  --blue2:#3B82F6;
+  --blue:#1565D8;
+  --blue-dark:#0F4DAA;
+  --error:#B5202D;
+  --success:#1B7A3D;
+  --radius:8px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--paper-dim);
+  color:var(--ink);
+  font-family:'Work Sans',sans-serif;
+  font-size:16px;
+  line-height:1.6;
+}
+h1,h2,h3{font-family:'Playfair Display',serif;font-weight:700;line-height:1.15;margin:0;}
+a{color:var(--blue);text-decoration:none;}
+
+.portal-header{
+  background:var(--blue);
+  padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.portal-brand{display:flex;align-items:center;gap:12px;color:#fff;}
+.portal-badge{
+  width:42px;height:42px;
+  clip-path:polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+  background:#fff;display:flex;align-items:center;justify-content:center;
+  color:var(--blue);font-family:'Fredoka',sans-serif;font-weight:600;font-size:18px;
+}
+.portal-brand .name{font-family:'Fredoka',sans-serif;font-weight:600;font-size:17px;}
+.portal-header a.back{color:#fff;font-size:14px;opacity:.9;}
+.portal-header a.back:hover{opacity:1;text-decoration:underline;}
+
+.portal-wrap{max-width:1100px;margin:0 auto;padding:48px 24px;}
+
+.login-card{
+  max-width:420px;margin:60px auto;background:#fff;border-radius:var(--radius);
+  padding:40px;box-shadow:0 12px 40px rgba(11,30,61,0.1);
+}
+.login-card h1{font-size:28px;margin-bottom:8px;}
+.login-card p.sub{color:#5a5d63;font-size:14.5px;margin:0 0 28px;}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.field label{font-weight:600;font-size:14px;}
+.field input{
+  font-family:inherit;font-size:15px;padding:12px 14px;
+  border:2px solid #cfd8e8;border-radius:6px;outline:none;
+  transition:border-color .2s ease;
+}
+.field input:focus{border-color:var(--blue);}
+.btn{
+  width:100%;padding:14px;border-radius:6px;font-weight:700;font-size:15px;
+  border:none;cursor:pointer;font-family:inherit;background:var(--blue);color:#fff;
+  transition:background .2s ease;
+}
+.btn:hover{background:var(--blue-dark);}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.form-note{margin:14px 0 0;font-size:14px;font-weight:600;min-height:20px;text-align:center;}
+.note-error{color:var(--error);}
+.note-success{color:var(--success);}
+
+.dash-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px;}
+.dash-topbar h1{font-size:26px;}
+.dash-topbar .who{font-size:14px;color:#5a5d63;}
+.btn-outline{
+  background:transparent;color:var(--blue);border:2px solid var(--blue);
+  padding:10px 20px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;
+}
+.btn-outline:hover{background:var(--blue);color:#fff;}
+
+.card{background:#fff;border-radius:var(--radius);padding:28px;margin-bottom:24px;box-shadow:0 4px 20px rgba(11,30,61,0.06);}
+.card h2{font-size:19px;margin-bottom:16px;}
+.placeholder-note{color:#8a8d93;font-size:14.5px;font-style:italic;}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px;}
+table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--paper-dim);color:#5a5d63;font-size:13px;text-transform:uppercase;letter-spacing:.03em;}
+table td{padding:12px;border-bottom:1px solid var(--paper-dim);}
+.badge-status{padding:4px 10px;border-radius:20px;font-size:12.5px;font-weight:700;}
+.badge-paid{background:#E3F5E9;color:var(--success);}
+.badge-outstanding{background:#FDEAEC;color:var(--error);}
+
+#printArea{display:none;}
+@media print {
+  body{background:#fff !important;}
+  body *{visibility:hidden;}
+  #printArea{display:block !important;visibility:visible;position:absolute;top:0;left:0;width:100%;padding:40px;background:#fff;}
+  #printArea *{visibility:visible;}
+  .no-print{display:none !important;}
+}
+.report-card{max-width:720px;margin:0 auto;}
+.report-card .rc-header{text-align:center;border-bottom:3px solid var(--ink);padding-bottom:16px;margin-bottom:20px;}
+.report-card .rc-badge{width:60px;height:60px;margin:0 auto 10px;clip-path:polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:600;font-size:26px;}
+.report-card .rc-school-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;}
+.report-card .rc-address{font-size:13px;color:#5a5d63;margin-top:4px;}
+.report-card .rc-title{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:10px;}
+.report-card .rc-info{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:20px;font-size:14.5px;}
+.report-card .rc-info b{color:var(--ink);}
+.report-card table{width:100%;}
+.report-card .rc-footer{margin-top:32px;display:flex;justify-content:space-between;font-size:13px;color:#5a5d63;}
+.report-card .rc-signature{margin-top:40px;border-top:1px solid #333;padding-top:6px;width:200px;text-align:center;font-size:12.5px;}
+
+@media (max-width:600px){
+  .login-card{margin:30px auto;padding:28px;}
+}
