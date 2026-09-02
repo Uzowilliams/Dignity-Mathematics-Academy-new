@@ -46,6 +46,29 @@
     <h2>Announcements</h2>
     <div id="annList"><p class="placeholder-note">Loading announcements...</p></div>
   </div>
+
+  <div class="card">
+    <h2>Print Report Card</h2>
+    <p style="font-size:14px;color:#5a5d63;margin-top:-8px;margin-bottom:20px;">
+      Pick a child and a term to print directly — nothing is shown on screen, only in the print dialog itself.
+    </p>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr;max-width:640px;">
+      <div class="field">
+        <label for="printChildSelect">Child</label>
+        <select id="printChildSelect" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="printTermSelect">Term / Session</label>
+        <select id="printTermSelect" disabled style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Select a child first</option>
+        </select>
+      </div>
+    </div>
+    <button type="button" class="btn" id="printReportBtn" disabled style="width:auto;padding:12px 24px;margin-top:16px;">🖨 Print Report Card</button>
+    <p class="form-note" id="printNote"></p>
+  </div>
 </div>
 
 <!-- Hidden printable report card, filled in just before printing -->
@@ -61,6 +84,7 @@
     loadAnnouncements();
     loadChildrenAndResults();
     loadFees();
+    loadPrintChildOptions();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -206,6 +230,102 @@
       });
     });
   }
+
+  // ---------- Print Report Card (standalone, no on-screen preview) ----------
+  async function loadPrintChildOptions() {
+    const select = document.getElementById('printChildSelect');
+    const { data, error } = await supabaseClient
+      .from('students')
+      .select('id, full_name, admission_number, program');
+
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No children linked yet</option>';
+      return;
+    }
+
+    window.__printChildren = Object.fromEntries(data.map(s => [s.id, s]));
+    select.innerHTML = (data.length > 1 ? '<option value="">— Choose a child —</option>' : '') + data.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
+    ).join('');
+
+    if (data.length === 1) {
+      select.value = data[0].id;
+      select.dispatchEvent(new Event('change'));
+    }
+  }
+
+  document.getElementById('printChildSelect').addEventListener('change', async (e) => {
+    const studentId = e.target.value;
+    const termSelect = document.getElementById('printTermSelect');
+    const printBtn = document.getElementById('printReportBtn');
+    const note = document.getElementById('printNote');
+    note.textContent = '';
+
+    if (!studentId) {
+      termSelect.innerHTML = '<option value="">Select a child first</option>';
+      termSelect.disabled = true;
+      printBtn.disabled = true;
+      return;
+    }
+
+    termSelect.innerHTML = '<option value="">Loading...</option>';
+    termSelect.disabled = true;
+    printBtn.disabled = true;
+
+    const { data, error } = await supabaseClient
+      .from('results')
+      .select('term, session')
+      .eq('student_id', studentId);
+
+    if (error || !data || data.length === 0) {
+      termSelect.innerHTML = '<option value="">No results recorded yet</option>';
+      return;
+    }
+
+    const seen = new Set();
+    const combos = [];
+    data.forEach(r => {
+      const key = `${r.session}|${r.term}`;
+      if (!seen.has(key)) { seen.add(key); combos.push({ session: r.session, term: r.term }); }
+    });
+    combos.sort((a, b) => b.session.localeCompare(a.session) || a.term.localeCompare(b.term));
+
+    termSelect.innerHTML = '<option value="">— Choose a term —</option>' + combos.map(c =>
+      `<option value="${escapeHtml(c.session)}|${escapeHtml(c.term)}">${escapeHtml(c.term)} — ${escapeHtml(c.session)}</option>`
+    ).join('');
+    termSelect.disabled = false;
+  });
+
+  document.getElementById('printTermSelect').addEventListener('change', (e) => {
+    document.getElementById('printReportBtn').disabled = !e.target.value;
+  });
+
+  document.getElementById('printReportBtn').addEventListener('click', async () => {
+    const note = document.getElementById('printNote');
+    const studentId = document.getElementById('printChildSelect').value;
+    const [session, term] = document.getElementById('printTermSelect').value.split('|');
+    if (!studentId || !session || !term) return;
+
+    note.className = 'form-note';
+    note.textContent = 'Preparing...';
+
+    const { data, error } = await supabaseClient
+      .from('results')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('session', session)
+      .eq('term', term);
+
+    if (error || !data || data.length === 0) {
+      note.className = 'form-note note-error';
+      note.textContent = 'Could not load results for printing.';
+      return;
+    }
+
+    note.textContent = '';
+    const child = window.__printChildren[studentId];
+    printReportCard({ session, term, rows: data }, child);
+  });
 
   function printReportCard(group, child) {
     const avg = (group.rows.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / group.rows.length).toFixed(1);

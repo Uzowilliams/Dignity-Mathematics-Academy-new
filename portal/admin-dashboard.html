@@ -179,7 +179,33 @@
     </div>
     <p id="feeNoStudentNote" class="placeholder-note">Select a student above to view or add fee records.</p>
   </div>
+
+  <div class="card">
+    <h2>Print Report Card</h2>
+    <p style="font-size:14px;color:#5a5d63;margin-top:-8px;margin-bottom:20px;">
+      Pick a student and a term to print directly — no scores are shown on screen here, only in the print dialog itself.
+    </p>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr;max-width:640px;">
+      <div class="field">
+        <label for="printStudentSelect">Student</label>
+        <select id="printStudentSelect" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Loading students...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="printTermSelect">Term / Session</label>
+        <select id="printTermSelect" disabled style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Select a student first</option>
+        </select>
+      </div>
+    </div>
+    <button type="button" class="btn" id="printReportBtn" disabled style="width:auto;padding:12px 24px;margin-top:16px;">🖨 Print Report Card</button>
+    <p class="form-note" id="printNote"></p>
+  </div>
 </div>
+
+<!-- Hidden printable report card, filled in just before printing -->
+<div id="printArea"></div>
 
 <script src="supabase-client.js"></script>
 <script>
@@ -196,6 +222,7 @@
     loadStudents();
     loadResultStudentOptions();
     loadFeeStudentOptions();
+    loadPrintStudentOptions();
   })();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -662,6 +689,141 @@
     document.getElementById('feeDueDate').value = '';
     loadFees();
   });
+
+  // ---------- Print Report Card (no on-screen preview) ----------
+  async function loadPrintStudentOptions() {
+    const select = document.getElementById('printStudentSelect');
+    const { data, error } = await supabaseClient
+      .from('students')
+      .select('id, full_name, admission_number, program')
+      .order('full_name', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No students added yet</option>';
+      return;
+    }
+
+    window.__printStudents = Object.fromEntries(data.map(s => [s.id, s]));
+    select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
+    ).join('');
+  }
+
+  document.getElementById('printStudentSelect').addEventListener('change', async (e) => {
+    const studentId = e.target.value;
+    const termSelect = document.getElementById('printTermSelect');
+    const printBtn = document.getElementById('printReportBtn');
+    const note = document.getElementById('printNote');
+    note.textContent = '';
+
+    if (!studentId) {
+      termSelect.innerHTML = '<option value="">Select a student first</option>';
+      termSelect.disabled = true;
+      printBtn.disabled = true;
+      return;
+    }
+
+    termSelect.innerHTML = '<option value="">Loading...</option>';
+    termSelect.disabled = true;
+    printBtn.disabled = true;
+
+    const { data, error } = await supabaseClient
+      .from('results')
+      .select('term, session')
+      .eq('student_id', studentId);
+
+    if (error || !data || data.length === 0) {
+      termSelect.innerHTML = '<option value="">No results recorded for this student</option>';
+      return;
+    }
+
+    const seen = new Set();
+    const combos = [];
+    data.forEach(r => {
+      const key = `${r.session}|${r.term}`;
+      if (!seen.has(key)) { seen.add(key); combos.push({ session: r.session, term: r.term }); }
+    });
+    combos.sort((a, b) => b.session.localeCompare(a.session) || a.term.localeCompare(b.term));
+
+    termSelect.innerHTML = '<option value="">— Choose a term —</option>' + combos.map(c =>
+      `<option value="${escapeHtml(c.session)}|${escapeHtml(c.term)}">${escapeHtml(c.term)} — ${escapeHtml(c.session)}</option>`
+    ).join('');
+    termSelect.disabled = false;
+  });
+
+  document.getElementById('printTermSelect').addEventListener('change', (e) => {
+    document.getElementById('printReportBtn').disabled = !e.target.value;
+  });
+
+  document.getElementById('printReportBtn').addEventListener('click', async () => {
+    const note = document.getElementById('printNote');
+    const studentId = document.getElementById('printStudentSelect').value;
+    const [session, term] = document.getElementById('printTermSelect').value.split('|');
+    if (!studentId || !session || !term) return;
+
+    note.className = 'form-note';
+    note.textContent = 'Preparing...';
+
+    const { data, error } = await supabaseClient
+      .from('results')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('session', session)
+      .eq('term', term);
+
+    if (error || !data || data.length === 0) {
+      note.className = 'form-note note-error';
+      note.textContent = 'Could not load results for printing.';
+      return;
+    }
+
+    note.textContent = '';
+    const child = window.__printStudents[studentId];
+    printReportCard({ session, term, rows: data }, child);
+  });
+
+  function printReportCard(group, child) {
+    const avg = (group.rows.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / group.rows.length).toFixed(1);
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `
+      <div class="report-card">
+        <div class="rc-header">
+          <div class="rc-badge">D</div>
+          <div class="rc-school-name">Dignity Mathematics Academy</div>
+          <div class="rc-address">46 Ogbudike Street, Okpoko, Onitsha, Anambra State</div>
+          <div class="rc-title">Student Report Card</div>
+        </div>
+        <div class="rc-info">
+          <div><b>Student:</b> ${escapeHtml(child ? child.full_name : 'Unknown')}</div>
+          <div><b>Admission No.:</b> ${escapeHtml(child ? child.admission_number : '-')}</div>
+          <div><b>Program:</b> ${escapeHtml(child ? child.program : '-')}</div>
+          <div><b>Term / Session:</b> ${escapeHtml(group.term)} — ${escapeHtml(group.session)}</div>
+        </div>
+        <table>
+          <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
+          <tbody>
+            ${group.rows.map(r => `
+              <tr>
+                <td>${escapeHtml(r.subject)}</td>
+                <td>${r.score ?? '-'}</td>
+                <td>${escapeHtml(r.grade || '-')}</td>
+                <td>${escapeHtml(r.remarks || '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="rc-info" style="margin-top:16px;">
+          <div><b>Average Score:</b> ${avg}</div>
+          <div><b>Printed on:</b> ${formatDate(new Date().toISOString())}</div>
+        </div>
+        <div class="rc-footer">
+          <div class="rc-signature">Class Teacher</div>
+          <div class="rc-signature">Head Teacher</div>
+        </div>
+      </div>
+    `;
+    window.print();
+  }
 </script>
 
 </body>
