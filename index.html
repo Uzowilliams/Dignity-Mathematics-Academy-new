@@ -70,7 +70,15 @@
   .window-strip{display:flex;gap:10px;padding:14px 24px;background:var(--navy-dark);overflow:hidden;justify-content:center;flex-wrap:wrap;}
   .window-strip span{width:34px;height:24px;border:4px solid var(--c,var(--sky));border-radius:3px;flex-shrink:0;opacity:0.9;}
 
-  /* ---------- header ---------- */
+  /* ---------- utility bar ---------- */
+  .utility-bar{background:var(--navy-dark);color:#cfe0ff;font-size:13px;padding:9px 24px;display:flex;justify-content:center;gap:28px;flex-wrap:wrap;}
+  .utility-bar .u-item{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+  .utility-bar svg{flex-shrink:0;}
+  .utility-bar a{color:#cfe0ff;}
+  .utility-bar a:hover{color:#fff;}
+  @media (max-width:700px){ .utility-bar{font-size:12px;gap:14px;padding:8px 16px;} }
+  @media (max-width:480px){ .utility-bar .u-item.hide-xs{display:none;} }
+
   header{position:sticky;top:0;z-index:60;background:var(--blue);transition:box-shadow .3s ease, padding .3s ease;}
   header.scrolled{box-shadow:0 6px 24px rgba(0,0,0,0.25);}
   .nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:32px 24px;max-width:1280px;margin:0 auto;transition:padding .3s ease;}
@@ -88,20 +96,56 @@
   .brand-text .name{font-family:'Fredoka',sans-serif;font-weight:600;font-size:28px;color:#fff;transition:font-size .3s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   header.scrolled .brand-text .name{font-size:20px;}
   .brand-text .tag{font-family:'Space Mono',monospace;font-size:14px;letter-spacing:0.06em;color:#CFE6FF;text-transform:uppercase;}
-  nav.links{display:flex;gap:24px;font-weight:500;font-size:17px;}
+  nav.links{display:flex;align-items:center;gap:24px;font-weight:500;font-size:17px;}
+  .nav-dropdown{position:relative;}
+  .nav-dropdown-toggle{
+    background:none;border:none;color:#fff;font-family:inherit;font-size:17px;font-weight:500;
+    display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;
+  }
+  .nav-dropdown-toggle .caret{font-size:12px;transition:transform .2s ease;}
+  .nav-dropdown.open .nav-dropdown-toggle .caret{transform:rotate(180deg);}
+  .nav-dropdown-menu{
+    position:absolute;top:calc(100% + 16px);left:50%;transform:translateX(-50%);
+    background:#fff;border-radius:8px;box-shadow:0 16px 40px rgba(11,30,61,0.22);
+    min-width:200px;padding:8px 0;opacity:0;visibility:hidden;transition:opacity .2s ease, transform .2s ease;
+    transform:translateX(-50%) translateY(-8px);
+  }
+  .nav-dropdown.open .nav-dropdown-menu{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+  .nav-dropdown-menu a{
+    display:block;padding:12px 20px;color:var(--ink) !important;font-size:15px;font-weight:500;white-space:nowrap;
+  }
+  .nav-dropdown-menu a:hover{background:var(--paper-dim);}
+  .nav-dropdown-menu a::after{display:none;}
   nav.links a{position:relative;padding:4px 0;color:#fff;white-space:nowrap;}
   nav.links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:2px;background:#fff;transition:width .2s ease;}
   nav.links a:hover::after{width:100%;}
+  nav.links a svg.nav-icon{display:none;}
   .nav-cta{background:#fff;color:var(--blue);padding:14px 26px;border-radius:4px;font-weight:700;font-size:17px;white-space:nowrap;}
+  .nav-accordion{display:none;}
   .menu-btn{display:none;background:none;border:2px solid #fff;border-radius:4px;padding:12px 14px;cursor:pointer;flex-shrink:0;}
   .menu-btn span{display:block;width:26px;height:3px;background:#fff;margin:5px 0;}
 
   @media (max-width:860px){
-    nav.links{position:absolute;top:100%;left:0;right:0;background:var(--blue-dark);flex-direction:column;gap:0;max-height:0;overflow:hidden;transition:max-height .3s ease;}
-    nav.links.open{max-height:400px;}
-    nav.links a{padding:14px 24px;border-top:1px solid rgba(255,255,255,0.15);}
+    nav.links{position:absolute;top:100%;left:0;right:0;background:#fff;flex-direction:column;gap:0;max-height:0;overflow:hidden;transition:max-height .35s ease;box-shadow:0 12px 24px rgba(11,30,61,0.15);}
+    nav.links.open{max-height:600px;}
+    nav.links a{padding:16px 24px;border-top:1px solid #eef2f8;color:var(--ink);display:flex;align-items:center;gap:14px;}
+    nav.links a::after{display:none;}
+    nav.links a svg.nav-icon{display:inline-flex;}
     .nav-cta{display:none;}
     .menu-btn{display:block;}
+    .nav-dropdown{display:none;}
+
+    .nav-accordion{border-top:1px solid #eef2f8;display:block;}
+    .accordion-toggle{
+      width:100%;background:none;border:none;font-family:inherit;font-size:17px;font-weight:500;
+      padding:16px 24px;display:flex;align-items:center;gap:14px;color:var(--ink);cursor:pointer;text-align:left;
+    }
+    .accordion-toggle .caret{margin-left:auto;transition:transform .25s ease;color:#9aa3b5;}
+    .nav-accordion.open .accordion-toggle{background:#FFF8E8;}
+    .nav-accordion.open .caret{transform:rotate(180deg);}
+    .accordion-panel{max-height:0;overflow:hidden;transition:max-height .3s ease;background:#FAFBFD;}
+    .nav-accordion.open .accordion-panel{max-height:200px;}
+    .accordion-panel a{padding:14px 24px 14px 54px;border-top:1px solid #eef2f8;display:block;color:var(--blue);font-size:15.5px;font-weight:500;}
   }
   @media (max-width:480px){
     .brand-text .name{font-size:19px;}
@@ -321,6 +365,21 @@
 </head>
 <body>
 
+<div class="utility-bar">
+  <span class="u-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    8:00am – 4:00pm Mon – Fri
+  </span>
+  <span class="u-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    <a href="tel:+2347069017716">0706 901 7716</a>
+  </span>
+  <span class="u-item hide-xs">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+    <a href="mailto:dignitymathematicsacademy@gmail.com">dignitymathematicsacademy@gmail.com</a>
+  </span>
+</div>
+
 <header id="siteHeader">
   <div class="nav">
     <div class="brand">
@@ -331,13 +390,60 @@
       </div>
     </div>
     <nav class="links" id="navLinks">
-      <a href="#home">Home</a>
-      <a href="#about">About Us</a>
-      <a href="#programs">Programs</a>
-      <a href="#admissions">Admissions</a>
-      <a href="#inquire">Inquire</a>
-      <a href="#gallery">Gallery</a>
-      <a href="#contact">Contact</a>
+      <a href="#home">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2FA84F" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        Home
+      </a>
+      <a href="#about">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#123C7A" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        About Us
+      </a>
+      <a href="#programs">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E67E22" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Programs
+      </a>
+      <a href="#admissions">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565D8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>
+        Admissions
+      </a>
+      <a href="#inquire">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565D8" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>
+        Inquire
+      </a>
+      <a href="#gallery">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5AB8FF" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Gallery
+      </a>
+
+      <!-- Desktop dropdown (hidden on mobile; mobile uses the accordion below) -->
+      <div class="nav-dropdown" id="portalDropdown">
+        <button type="button" class="nav-dropdown-toggle" id="portalDropdownToggle">
+          Portal Login <span class="caret">▾</span>
+        </button>
+        <div class="nav-dropdown-menu">
+          <a href="portal/parent-login.html">Parent's Login</a>
+          <a href="portal/parent-login.html">Student's Login</a>
+          <a href="portal/admin-login.html">Staff's Login</a>
+        </div>
+      </div>
+
+      <div class="nav-accordion" id="portalAccordion">
+        <button type="button" class="accordion-toggle" id="portalToggle">
+          <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3EC6C6" stroke-width="2" style="display:inline-flex;"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Portal Login
+          <span class="caret">▾</span>
+        </button>
+        <div class="accordion-panel">
+          <a href="portal/parent-login.html">Parent's Login</a>
+          <a href="portal/parent-login.html">Student's Login</a>
+          <a href="portal/admin-login.html">Staff's Login</a>
+        </div>
+      </div>
+
+      <a href="#contact">
+        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565D8" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Contact Us
+      </a>
     </nav>
     <a href="#admissions" class="nav-cta">Enroll Now</a>
     <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">
@@ -604,8 +710,6 @@
         <a href="#inquire">Inquire</a>
         <a href="#gallery">Gallery</a>
         <a href="#contact">Contact</a>
-        <a href="portal/parent-login.html">Parent Portal</a>
-        <a href="portal/admin-login.html">Staff Login</a>
       </div>
       <div class="foot-addr">
         <span class="school-name">Dignity Mathematics Academy</span>
@@ -628,6 +732,22 @@
   const navLinks = document.getElementById('navLinks');
   menuBtn.addEventListener('click', () => navLinks.classList.toggle('open'));
   navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
+
+  // Portal Login accordion (mobile menu)
+  const portalAccordion = document.getElementById('portalAccordion');
+  const portalToggle = document.getElementById('portalToggle');
+  portalToggle.addEventListener('click', () => portalAccordion.classList.toggle('open'));
+
+  // Portal Login dropdown (desktop nav)
+  const portalDropdown = document.getElementById('portalDropdown');
+  const portalDropdownToggle = document.getElementById('portalDropdownToggle');
+  portalDropdownToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    portalDropdown.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!portalDropdown.contains(e.target)) portalDropdown.classList.remove('open');
+  });
 
   // header shrink on scroll
   const header = document.getElementById('siteHeader');
