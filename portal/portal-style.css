@@ -105,7 +105,10 @@ table td{padding:12px;border-bottom:1px solid var(--paper-dim);}
 .report-card .rc-info b{color:var(--ink);}
 .report-card table{width:100%;}
 .report-card .rc-footer{margin-top:32px;display:flex;justify-content:space-between;font-size:13px;color:#5a5d63;}
-.report-card .rc-signature{margin-top:40px;border-top:1px solid #333;padding-top:6px;width:200px;text-align:center;font-size:12.5px;}
+.report-card .rc-sig-block{width:220px;text-align:center;}
+.report-card .rc-sig-img{max-height:55px;max-width:200px;object-fit:contain;display:block;margin:0 auto;}
+.report-card .rc-sig-line{border-top:1px solid #333;margin-top:4px;}
+.report-card .rc-sig-label{padding-top:6px;font-size:12.5px;color:#5a5d63;}
 
 @media (max-width:600px){
   .login-card{margin:30px auto;padding:28px;}
