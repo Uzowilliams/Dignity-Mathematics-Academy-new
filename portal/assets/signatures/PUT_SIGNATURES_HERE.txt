@@ -1,0 +1,20 @@
+HOW TO ADD SIGNATURES
+======================
+
+1. Scan or photograph the two signatures (Class Teacher, Head Teacher).
+2. Crop each tightly around just the signature itself (no extra white space,
+   no phone/scanner background) - ideally on a plain white or transparent background.
+3. Save as PNG files with these EXACT names, replacing this text file:
+
+   class-teacher.png
+   head-teacher.png
+
+4. Recommended size: around 400px wide x 150px tall (roughly 8:3 ratio),
+   PNG format so it can have a transparent background if you have one.
+   If the background isn't transparent, plain white works fine too since
+   the report card background is white.
+
+5. That's it - once both files exist at this exact path, they'll
+   automatically appear above the signature lines on every printed
+   report card. Until then, the report card just shows a blank line
+   (no broken image icon).
