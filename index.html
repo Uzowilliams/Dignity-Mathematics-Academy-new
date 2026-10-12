@@ -264,11 +264,28 @@
     position:relative;aspect-ratio:1/0.82;border-radius:6px;overflow:hidden;
     display:flex;align-items:flex-end;padding:26px;
     cursor:pointer;
-  }
-  .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s ease, filter .5s ease;filter:grayscale(0.15) brightness(0.55);}
-  .tile:hover img{transform:scale(1.08);filter:grayscale(0) brightness(0.45);}
-  .tile .tint{position:absolute;inset:0;mix-blend-mode:multiply;opacity:.8;}
-  .tile .overlay-grad{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 100%);}
+  .tile img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transition:transform .5s ease, filter .5s ease;
+  filter:none; /* no more dimming */
+}
+.tile:hover img{
+  transform:scale(1.08);
+  filter:brightness(1.08); /* gets slightly brighter on hover instead of darker */
+}
+
+/* light color wash, no multiply */
+.tile .tint{
+  position:absolute;inset:0;
+  mix-blend-mode:normal;
+  opacity:.12;
+}
+
+/* dark only at the bottom, so the white text stays readable */
+.tile .overlay-grad{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.65) 100%);
+}
   .tile .tile-body{position:relative;z-index:2;color:#fff;}
   .tile .age-tag{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.06em;color:#fff;margin-bottom:6px;display:block;}
   .tile h3{font-size:24px;color:#fff;}
