@@ -356,6 +356,25 @@
     ).join('');
   }
 
+  // Shrinks a photo to at most 500px so uploads stay small and fast
+  function resizePhoto(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('Could not process the image')), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => reject(new Error('That file is not a valid image'));
+      img.src = url;
+    });
+  }
+
   async function loadStudents() {
     const listEl = document.getElementById('studentList');
     const { data, error } = await supabaseClient
@@ -375,7 +394,7 @@
     listEl.innerHTML = `
       <table>
         <thead>
-          <tr><th>Name</th><th>Admission No.</th><th>Program</th><th>Parent</th><th></th></tr>
+          <tr><th>Name</th><th>Admission No.</th><th>Program</th><th>Parent</th><th>Passport Photo</th><th></th></tr>
         </thead>
         <tbody>
           ${data.map(s => `
@@ -384,12 +403,49 @@
               <td>${escapeHtml(s.admission_number)}</td>
               <td>${escapeHtml(s.program)}</td>
               <td>${escapeHtml(s.profiles?.full_name || s.profiles?.email || 'Unknown')}</td>
+              <td style="white-space:nowrap;">
+                <img class="st-photo" data-path="${escapeHtml(s.photo_path || '')}" alt="" style="width:38px;height:46px;object-fit:cover;border-radius:4px;background:#e8eef8;vertical-align:middle;display:${s.photo_path ? 'inline-block' : 'none'};">
+                <label class="btn-outline" style="padding:5px 10px;font-size:12.5px;cursor:pointer;display:inline-block;">${s.photo_path ? 'Change' : 'Upload'}<input type="file" accept="image/*" class="photo-input" data-id="${s.id}" style="display:none;"></label>
+              </td>
               <td><button class="btn-outline delete-student-btn" data-id="${s.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     `;
+
+    // Show the saved passport photos
+    const savedPaths = data.filter(s => s.photo_path).map(s => s.photo_path);
+    if (savedPaths.length) {
+      const { data: urls } = await supabaseClient.storage.from('student-photos').createSignedUrls(savedPaths, 3600);
+      (urls || []).forEach(u => {
+        if (!u.signedUrl) return;
+        document.querySelectorAll('.st-photo').forEach(img => {
+          if (img.getAttribute('data-path') === u.path) img.src = u.signedUrl;
+        });
+      });
+    }
+
+    // Upload or replace a passport photo
+    document.querySelectorAll('.photo-input').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const file = inp.files[0];
+        if (!file) return;
+        const id = inp.getAttribute('data-id');
+        try {
+          const blob = await resizePhoto(file, 500);
+          const path = id + '.jpg';
+          const up = await supabaseClient.storage.from('student-photos')
+            .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+          if (up.error) throw up.error;
+          const upd = await supabaseClient.from('students').update({ photo_path: path }).eq('id', id);
+          if (upd.error) throw upd.error;
+          loadStudents();
+        } catch (err) {
+          alert('Could not save the photo: ' + (err.message || err));
+        }
+      });
+    });
 
     document.querySelectorAll('.delete-student-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
