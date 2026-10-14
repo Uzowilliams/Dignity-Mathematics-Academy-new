@@ -114,16 +114,24 @@
           <input type="text" id="resSubject" required placeholder="e.g. Mathematics">
         </div>
         <div class="field">
-          <label for="resScore">Score (out of 100)</label>
-          <input type="number" id="resScore" min="0" max="100" required placeholder="e.g. 85">
+          <label for="resCA">CA (out of 40)</label>
+          <input type="number" id="resCA" min="0" max="40" step="any" required placeholder="e.g. 34">
         </div>
         <div class="field">
-          <label for="resGrade">Grade</label>
-          <input type="text" id="resGrade" required placeholder="e.g. A">
+          <label for="resExam">Exam (out of 60)</label>
+          <input type="number" id="resExam" min="0" max="60" step="any" required placeholder="e.g. 53">
         </div>
         <div class="field">
-          <label for="resRemarks">Remarks</label>
-          <input type="text" id="resRemarks" placeholder="e.g. Excellent">
+          <label for="resRemarks">Remark</label>
+          <input type="text" id="resRemarks" list="remarkOptions" placeholder="e.g. Excellent">
+          <datalist id="remarkOptions">
+            <option value="Excellent"><option value="Very Good"><option value="Good">
+            <option value="Fair"><option value="Poor">
+          </datalist>
+        </div>
+        <div class="field">
+          <label>Total (CA + Exam)</label>
+          <div id="resTotalPreview" style="padding:12px 14px;font-weight:700;font-size:18px;">-</div>
         </div>
         <div style="grid-column:1 / -1;">
           <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="addResultBtn">Add Result</button>
@@ -133,6 +141,73 @@
       <div id="resultList"></div>
     </div>
     <p id="resNoStudentNote" class="placeholder-note">Select a student above to view or add results.</p>
+  </div>
+
+  <div class="card">
+    <h2>Term Details &amp; Ratings</h2>
+    <p style="font-size:13.5px;color:#6b7a90;margin:-8px 0 16px;">
+      Everything on the report card that is not a subject score: class, attendance, remarks, weight, height and the A to E ratings.
+      Positions, class high/low and averages are worked out for you. Every child needs this filled in, because it tells the system which class they belong to.
+    </p>
+    <div style="display:grid;gap:14px;grid-template-columns:2fr 1fr 1fr;margin-bottom:10px;">
+      <div class="field">
+        <label for="tdStudent">Student</label>
+        <select id="tdStudent" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Loading students...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tdTerm">Term</label>
+        <select id="tdTerm" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="First Term">First Term</option>
+          <option value="Second Term">Second Term</option>
+          <option value="Third Term">Third Term</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tdSession">Session</label>
+        <input type="text" id="tdSession" placeholder="e.g. 2025/2026">
+      </div>
+    </div>
+
+    <form id="termForm" style="display:none;">
+      <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr 1fr;">
+        <div class="field"><label for="tdClass">Class</label><input type="text" id="tdClass" required placeholder="e.g. 5th"></div>
+        <div class="field"><label for="tdAge">Age</label><input type="number" id="tdAge" min="0" placeholder="e.g. 9"></div>
+        <div class="field"><label for="tdTeacher">Teacher</label><input type="text" id="tdTeacher" placeholder="e.g. Nwangwu F."></div>
+        <div class="field"><label for="tdW1">Weight, start of term (kg)</label><input type="number" id="tdW1" step="any" placeholder="e.g. 31"></div>
+        <div class="field"><label for="tdW2">Weight, end of term (kg)</label><input type="number" id="tdW2" step="any" placeholder="e.g. 32"></div>
+        <div class="field"><label>&nbsp;</label><div></div></div>
+        <div class="field"><label for="tdH1">Height, start of term (cm)</label><input type="number" id="tdH1" step="any" placeholder="e.g. 133"></div>
+        <div class="field"><label for="tdH2">Height, end of term (cm)</label><input type="number" id="tdH2" step="any" placeholder="e.g. 134.5"></div>
+        <div class="field"><label>&nbsp;</label><div></div></div>
+        <div class="field"><label for="tdOpened">Times school opened</label><input type="number" id="tdOpened" min="0" placeholder="e.g. 108"></div>
+        <div class="field"><label for="tdAbsent">Times absent</label><input type="number" id="tdAbsent" min="0" placeholder="e.g. 0"></div>
+        <div class="field">
+          <label for="tdStatus">Status</label>
+          <select id="tdStatus" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+            <option value="">(not decided yet)</option>
+            <option value="Promoted">Promoted</option>
+            <option value="Not Promoted">Not Promoted</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;gap:14px;grid-template-columns:1fr;">
+        <div class="field"><label for="tdOverall">Overall remark</label><input type="text" id="tdOverall" placeholder="e.g. A very good result"></div>
+        <div class="field"><label for="tdTeacherRemark">Class teacher's remark</label><input type="text" id="tdTeacherRemark" placeholder="e.g. Good effort"></div>
+        <div class="field"><label for="tdHeadRemark">Head Master/Mistress remark</label><input type="text" id="tdHeadRemark" placeholder="e.g. A very good result"></div>
+      </div>
+
+      <h3 style="font-size:15.5px;margin:10px 0 4px;">Affective Traits</h3>
+      <p style="font-size:12.5px;color:#6b7a90;margin:0 0 10px;">A Excellent, B Good, C Average, D Below Average, E Poor</p>
+      <div id="tdAffective" style="display:grid;gap:8px 20px;grid-template-columns:1fr 1fr;margin-bottom:18px;"></div>
+      <h3 style="font-size:15.5px;margin:10px 0 10px;">Psychomotor Skills</h3>
+      <div id="tdPsycho" style="display:grid;gap:8px 20px;grid-template-columns:1fr 1fr;margin-bottom:20px;"></div>
+
+      <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="saveTermBtn">Save Term Details</button>
+      <p class="form-note" id="termNote"></p>
+    </form>
+    <p id="tdHint" class="placeholder-note">Choose a student and type the session to begin.</p>
   </div>
 
   <div class="card">
@@ -223,6 +298,7 @@
     loadStudents();
     loadResultStudentOptions();
     loadFeeStudentOptions();
+    loadTermStudentOptions();
     loadPrintStudentOptions();
   })();
 
@@ -554,7 +630,7 @@
     listEl.innerHTML = `
       <table>
         <thead>
-          <tr><th>Session</th><th>Term</th><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th><th></th></tr>
+          <tr><th>Session</th><th>Term</th><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Remark</th><th></th></tr>
         </thead>
         <tbody>
           ${data.map(r => `
@@ -562,8 +638,9 @@
               <td>${escapeHtml(r.session)}</td>
               <td>${escapeHtml(r.term)}</td>
               <td>${escapeHtml(r.subject)}</td>
-              <td>${r.score ?? '-'}</td>
-              <td>${escapeHtml(r.grade || '-')}</td>
+              <td>${r.ca ?? '-'}</td>
+              <td>${r.exam ?? '-'}</td>
+              <td><strong>${r.score ?? '-'}</strong></td>
               <td>${escapeHtml(r.remarks || '-')}</td>
               <td><button class="btn-outline delete-result-btn" data-id="${r.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
             </tr>
@@ -583,6 +660,16 @@
     });
   }
 
+  // Live total next to the CA and Exam boxes
+  function updateResTotal() {
+    const ca = document.getElementById('resCA').value;
+    const exam = document.getElementById('resExam').value;
+    document.getElementById('resTotalPreview').textContent =
+      (ca === '' && exam === '') ? '-' : (Number(ca || 0) + Number(exam || 0));
+  }
+  document.getElementById('resCA').addEventListener('input', updateResTotal);
+  document.getElementById('resExam').addEventListener('input', updateResTotal);
+
   document.getElementById('resultForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!selectedStudentId) return;
@@ -592,13 +679,13 @@
     const term = document.getElementById('resTerm').value;
     const session = document.getElementById('resSession').value.trim();
     const subject = document.getElementById('resSubject').value.trim();
-    const score = document.getElementById('resScore').value;
-    const grade = document.getElementById('resGrade').value.trim();
+    const ca = document.getElementById('resCA').value;
+    const exam = document.getElementById('resExam').value;
     const remarks = document.getElementById('resRemarks').value.trim();
 
-    if (!session || !subject || !grade) {
+    if (!session || !subject || ca === '' || exam === '') {
       note.className = 'form-note note-error';
-      note.textContent = 'Please fill in session, subject, and grade.';
+      note.textContent = 'Please fill in session, subject, CA and Exam.';
       return;
     }
 
@@ -610,8 +697,9 @@
     const { error } = await supabaseClient.from('results').insert({
       student_id: selectedStudentId,
       term, session, subject,
-      score: score ? Number(score) : null,
-      grade, remarks
+      ca: Number(ca),
+      exam: Number(exam),
+      remarks
     });
 
     btn.disabled = false;
@@ -626,10 +714,138 @@
     note.className = 'form-note note-success';
     note.textContent = 'Result added!';
     document.getElementById('resSubject').value = '';
-    document.getElementById('resScore').value = '';
-    document.getElementById('resGrade').value = '';
+    document.getElementById('resCA').value = '';
+    document.getElementById('resExam').value = '';
     document.getElementById('resRemarks').value = '';
+    document.getElementById('resTotalPreview').textContent = '-';
+    document.getElementById('resSubject').focus();
     loadResults();
+  });
+
+  // ---------- Term details & ratings ----------
+  const AFFECTIVE_TRAITS = ['Attentiveness', 'Attitude to School Work', 'Completes Work Promptly', 'Honesty',
+    'Mental Alertness', 'Neatness', 'Politeness', 'Punctuality', 'Relationship w/ Peers', 'Respect', 'Spirit of Team Work'];
+  const PSYCHOMOTOR_SKILLS = ['Creative Arts', 'General Reasoning', 'Handwriting', 'Musical Skills',
+    'Physical Education', 'Reading', 'Verbal Fluency/Diction'];
+
+  function buildRatingSelects(containerId, group, names) {
+    document.getElementById(containerId).innerHTML = names.map(n => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #eef2f8;padding:4px 0;">
+        <span style="font-size:14px;">${escapeHtml(n)}</span>
+        <select class="rating-select" data-group="${group}" data-trait="${escapeHtml(n)}" style="font-family:inherit;font-size:14px;padding:6px 8px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">-</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+        </select>
+      </div>`).join('');
+  }
+  buildRatingSelects('tdAffective', 'affective', AFFECTIVE_TRAITS);
+  buildRatingSelects('tdPsycho', 'psychomotor', PSYCHOMOTOR_SKILLS);
+
+  async function loadTermStudentOptions() {
+    const select = document.getElementById('tdStudent');
+    const { data, error } = await supabaseClient
+      .from('students').select('id, full_name, admission_number').order('full_name', { ascending: true });
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No students added yet</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">- Choose a student -</option>' + data.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
+    ).join('');
+  }
+
+  const numOrNull = (v) => (v === '' || v === null || v === undefined) ? null : Number(v);
+  const setVal = (id, v) => { document.getElementById(id).value = (v === null || v === undefined) ? '' : v; };
+
+  async function loadTermInfo() {
+    const student_id = document.getElementById('tdStudent').value;
+    const term = document.getElementById('tdTerm').value;
+    const session = document.getElementById('tdSession').value.trim();
+    const form = document.getElementById('termForm');
+    const hint = document.getElementById('tdHint');
+    document.getElementById('termNote').textContent = '';
+
+    if (!student_id || !session) {
+      form.style.display = 'none';
+      hint.style.display = '';
+      return;
+    }
+    const { data, error } = await supabaseClient.from('term_info').select('*')
+      .eq('student_id', student_id).eq('term', term).eq('session', session).maybeSingle();
+    if (error) {
+      hint.style.display = '';
+      hint.textContent = 'Could not load: ' + error.message + ' (did you run the report card SQL script?)';
+      form.style.display = 'none';
+      return;
+    }
+    hint.style.display = 'none';
+    form.style.display = '';
+
+    const d = data || {};
+    setVal('tdClass', d.class_name); setVal('tdAge', d.age); setVal('tdTeacher', d.teacher_name);
+    setVal('tdW1', d.weight_start); setVal('tdW2', d.weight_end);
+    setVal('tdH1', d.height_start); setVal('tdH2', d.height_end);
+    setVal('tdOpened', d.times_opened); setVal('tdAbsent', d.times_absent);
+    setVal('tdStatus', d.status);
+    setVal('tdOverall', d.overall_remark); setVal('tdTeacherRemark', d.class_teacher_remark); setVal('tdHeadRemark', d.head_remark);
+    document.querySelectorAll('.rating-select').forEach(sel => {
+      const group = (sel.getAttribute('data-group') === 'affective' ? d.affective : d.psychomotor) || {};
+      sel.value = group[sel.getAttribute('data-trait')] || '';
+    });
+    if (!data) {
+      // New record: carry over class and teacher from the child's most recent term to save typing
+      const prev = await supabaseClient.from('term_info').select('class_name, teacher_name, age')
+        .eq('student_id', student_id).order('created_at', { ascending: false }).limit(1);
+      if (prev.data && prev.data[0]) {
+        setVal('tdClass', prev.data[0].class_name);
+        setVal('tdTeacher', prev.data[0].teacher_name);
+        setVal('tdAge', prev.data[0].age);
+      }
+    }
+  }
+  ['tdStudent', 'tdTerm'].forEach(id => document.getElementById(id).addEventListener('change', loadTermInfo));
+  document.getElementById('tdSession').addEventListener('change', loadTermInfo);
+
+  document.getElementById('termForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('termNote');
+    const btn = document.getElementById('saveTermBtn');
+    const student_id = document.getElementById('tdStudent').value;
+    const term = document.getElementById('tdTerm').value;
+    const session = document.getElementById('tdSession').value.trim();
+    const class_name = document.getElementById('tdClass').value.trim();
+    if (!student_id || !session || !class_name) {
+      note.className = 'form-note note-error';
+      note.textContent = 'Please choose a student, type the session and fill in the class.';
+      return;
+    }
+    const affective = {}, psychomotor = {};
+    document.querySelectorAll('.rating-select').forEach(sel => {
+      if (!sel.value) return;
+      (sel.getAttribute('data-group') === 'affective' ? affective : psychomotor)[sel.getAttribute('data-trait')] = sel.value;
+    });
+
+    btn.disabled = true; btn.textContent = 'Saving...';
+    note.className = 'form-note'; note.textContent = '';
+    const { error } = await supabaseClient.from('term_info').upsert({
+      student_id, term, session, class_name,
+      age: numOrNull(document.getElementById('tdAge').value),
+      teacher_name: document.getElementById('tdTeacher').value.trim() || null,
+      weight_start: numOrNull(document.getElementById('tdW1').value),
+      weight_end: numOrNull(document.getElementById('tdW2').value),
+      height_start: numOrNull(document.getElementById('tdH1').value),
+      height_end: numOrNull(document.getElementById('tdH2').value),
+      times_opened: numOrNull(document.getElementById('tdOpened').value),
+      times_absent: numOrNull(document.getElementById('tdAbsent').value),
+      status: document.getElementById('tdStatus').value || null,
+      overall_remark: document.getElementById('tdOverall').value.trim() || null,
+      class_teacher_remark: document.getElementById('tdTeacherRemark').value.trim() || null,
+      head_remark: document.getElementById('tdHeadRemark').value.trim() || null,
+      affective, psychomotor
+    }, { onConflict: 'student_id,term,session' });
+    btn.disabled = false; btn.textContent = 'Save Term Details';
+    if (error) { note.className = 'form-note note-error'; note.textContent = error.message; return; }
+    note.className = 'form-note note-success';
+    note.textContent = 'Saved!';
   });
 
   // ---------- Fees ----------
