@@ -397,6 +397,10 @@
   footer .fine{font-size:12.5px;color:#7d80a0;padding:22px 0;text-align:center;font-family:'Space Mono',monospace;border-top:1px solid rgba(255,255,255,0.12);}
 
   /* stat strip reused in hero-tagline area removed; kept in admissions maybe */
+
+  .wa-float{position:fixed;right:18px;bottom:18px;z-index:999;display:flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.wa-float:hover{filter:brightness(.95)}
+@media(max-width:600px){.wa-float span{display:none}.wa-float{padding:15px}}
 </style>
 </head>
 <body>
@@ -854,6 +858,11 @@
   }, { threshold: 0.15 });
   revealEls.forEach(el => io.observe(el));
 </script>
+
+  <a class="wa-float" href="https://wa.me/2347069017716?text=Hello%20Dignity%20Mathematics%20Academy%2C%20I%20would%20like%20to%20make%20an%20inquiry." target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+  <span>Chat with us</span>
+</a>
 
 </body>
 </html>
