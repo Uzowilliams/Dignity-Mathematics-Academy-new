@@ -29,7 +29,7 @@
 
   <div class="card">
     <h2>Inquiries</h2>
-    <p class="placeholder-note">Coming in Phase 2 — this will list every website inquiry in one place.</p>
+    <div id="inquiryList"><p class="placeholder-note">Loading inquiries...</p></div>
   </div>
 
   <div class="card">
@@ -217,6 +217,7 @@
     currentProfile = profile;
     document.getElementById('whoami').textContent =
       `Signed in as ${profile.full_name || 'Admin'} · Staff account`;
+    loadInquiries();
     loadAnnouncements();
     loadParentOptions();
     loadStudents();
@@ -228,6 +229,29 @@
   document.getElementById('logoutBtn').addEventListener('click', () => {
     logout('admin-login.html');
   });
+
+
+  async function loadInquiries() {
+    const listEl = document.getElementById('inquiryList');
+    const { data, error } = await supabaseClient
+      .from('inquiries').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="placeholder-note">Could not load inquiries: ${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listEl.innerHTML = '<p class="placeholder-note">No inquiries yet.</p>';
+      return;
+    }
+    listEl.innerHTML = data.map(i => `
+      <div style="border-bottom:1px solid #e1e8f2;padding:12px 0;">
+        <strong>${escapeHtml(i.name || '')}</strong>
+        <span style="color:#6b7a90;font-size:13px;"> · ${formatDate(i.created_at)}</span><br>
+        <span style="font-size:14px;">📞 ${escapeHtml(i.phone || '')} &nbsp; ✉️ ${escapeHtml(i.email || '')}</span><br>
+        <span style="font-size:14px;"><b>Program:</b> ${escapeHtml(i.program || '-')}</span><br>
+        <span style="font-size:14px;">${escapeHtml(i.message || '')}</span>
+      </div>`).join('');
+  }
 
   function escapeHtml(str) {
     const div = document.createElement('div');
