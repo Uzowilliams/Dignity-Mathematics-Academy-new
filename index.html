@@ -668,8 +668,8 @@
       </div>
       <div class="form-row">
         <div class="field">
-          <label for="fEmail">Email (optional)</label>
-          <input type="email" id="fEmail" name="fEmail" placeholder="e.g. you@email.com">
+          <label for="fEmail">Email *</label>
+          <input type="email" id="fEmail" name="fEmail" required placeholder="e.g. you@email.com">
         </div>
         <div class="field">
           <label for="fProgram">Program of Interest</label>
@@ -814,7 +814,7 @@
     const email = document.getElementById('fEmail').value.trim();
     const program = document.getElementById('fProgram').value;
     const message = document.getElementById('fMessage').value.trim();
-    if (!name || !phone) return null;
+      if (!name || !phone || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return null;
     return { fName: name, fPhone: phone, fEmail: email, fProgram: program, fMessage: message };
   }
 
@@ -822,7 +822,7 @@
     const data = getFormData();
     if (!data) {
       formNote.style.color = '#B5202D';
-      formNote.textContent = 'Please fill in your name and phone number.';
+      formNote.textContent = 'Please fill in your name, phone number and a valid email address.';
       return;
     }
     formNote.style.color = 'var(--blue-dark)';
