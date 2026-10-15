@@ -75,6 +75,7 @@
 <div id="printArea"></div>
 
 <script src="supabase-client.js"></script>
+<script src="report-card.js"></script>
 <script>
   (async () => {
     const profile = await requireLogin('parent', 'parent-login.html');
@@ -207,13 +208,14 @@
             <button class="btn-outline print-btn" data-group="${i}" style="padding:8px 18px;font-size:13.5px;">🖨 Print Report Card</button>
           </div>
           <table>
-            <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
+            <thead><tr><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Remark</th></tr></thead>
             <tbody>
               ${g.rows.map(r => `
                 <tr>
                   <td>${escapeHtml(r.subject)}</td>
-                  <td>${r.score ?? '-'}</td>
-                  <td>${escapeHtml(r.grade || '-')}</td>
+                  <td>${r.ca ?? '-'}</td>
+                  <td>${r.exam ?? '-'}</td>
+                  <td><strong>${r.score ?? '-'}</strong></td>
                   <td>${escapeHtml(r.remarks || '-')}</td>
                 </tr>
               `).join('')}
@@ -327,55 +329,15 @@
     printReportCard({ session, term, rows: data }, child);
   });
 
-  function printReportCard(group, child) {
-    const avg = (group.rows.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / group.rows.length).toFixed(1);
-    const printArea = document.getElementById('printArea');
-    printArea.innerHTML = `
-      <div class="report-card">
-        <div class="rc-header">
-          <div class="rc-badge">D</div>
-          <div class="rc-school-name">Dignity Mathematics Academy</div>
-          <div class="rc-address">46 Ogbudike Street, Okpoko, Onitsha, Anambra State</div>
-          <div class="rc-title">Student Report Card</div>
-        </div>
-        <div class="rc-info">
-          <div><b>Student:</b> ${escapeHtml(child ? child.full_name : 'Unknown')}</div>
-          <div><b>Admission No.:</b> ${escapeHtml(child ? child.admission_number : '-')}</div>
-          <div><b>Program:</b> ${escapeHtml(child ? child.program : '-')}</div>
-          <div><b>Term / Session:</b> ${escapeHtml(group.term)} — ${escapeHtml(group.session)}</div>
-        </div>
-        <table>
-          <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
-          <tbody>
-            ${group.rows.map(r => `
-              <tr>
-                <td>${escapeHtml(r.subject)}</td>
-                <td>${r.score ?? '-'}</td>
-                <td>${escapeHtml(r.grade || '-')}</td>
-                <td>${escapeHtml(r.remarks || '-')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <div class="rc-info" style="margin-top:16px;">
-          <div><b>Average Score:</b> ${avg}</div>
-          <div><b>Printed on:</b> ${formatDate(new Date().toISOString())}</div>
-        </div>
-        <div class="rc-footer">
-          <div class="rc-sig-block">
-            <img src="assets/signatures/class-teacher.png" class="rc-sig-img" alt="" onerror="this.style.display='none'">
-            <div class="rc-sig-line"></div>
-            <div class="rc-sig-label">Class Teacher</div>
-          </div>
-          <div class="rc-sig-block">
-            <img src="assets/signatures/head-teacher.png" class="rc-sig-img" alt="" onerror="this.style.display='none'">
-            <div class="rc-sig-line"></div>
-            <div class="rc-sig-label">Head Teacher</div>
-          </div>
-        </div>
-      </div>
-    `;
-    window.print();
+  // Prints the school's progress report layout (see report-card.js)
+  async function printReportCard(group, child) {
+    const note = document.getElementById('printNote');
+    const studentId = child ? child.id : group.student_id;
+    const problem = await printSchoolReportCard(studentId, group.term, group.session);
+    if (problem) {
+      if (note) { note.className = 'form-note note-error'; note.textContent = problem; }
+      else { alert(problem); }
+    }
   }
 
   function formatNaira(n) {
