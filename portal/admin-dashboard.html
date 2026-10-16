@@ -7,6 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Fredoka:wght@600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal-style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/img/favicon-16.png">
+  <link rel="shortcut icon" href="../assets/img/favicon.ico">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+  <meta name="theme-color" content="#1E7D3C">
 </head>
 <body>
 
@@ -50,6 +56,38 @@
   </div>
 
   <div class="card">
+    <h2>Bulk Import Students</h2>
+    <p style="font-size:14px;color:#5b6170;margin-bottom:14px;">
+      Add many students (old and new) at once from an Excel/CSV file. Parent logins are created automatically for new parents, and brothers and sisters with the same parent email share one login.
+    </p>
+    <ol style="font-size:14px;color:#5b6170;margin:0 0 14px 18px;line-height:1.7;">
+      <li><button type="button" class="btn-outline" id="biTemplate" style="padding:4px 12px;font-size:13px;">Download the template</button> and open it in Excel.</li>
+      <li>Fill one row per child, then <b>Save As &rarr; CSV</b>.</li>
+      <li>Choose the file below, check the preview, and press Import.</li>
+    </ol>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;">
+      <div class="field">
+        <label for="biTerm">Term (for the Class column)</label>
+        <select id="biTerm" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option>First Term</option><option>Second Term</option><option selected>Third Term</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="biSession">Session</label>
+        <input type="text" id="biSession" placeholder="e.g. 2026/2027">
+      </div>
+      <div class="field">
+        <label for="biFile">CSV file</label>
+        <input type="file" id="biFile" accept=".csv,text/csv">
+      </div>
+    </div>
+    <div id="biPreview"></div>
+    <button type="button" class="btn" id="biGo" style="width:auto;padding:12px 24px;display:none;">Import</button>
+    <p class="form-note" id="biNote"></p>
+    <div id="biResult"></div>
+  </div>
+
+  <div class="card">
     <h2>Students</h2>
     <form id="studentForm" style="display:grid;gap:14px;margin-bottom:24px;grid-template-columns:1fr 1fr;">
       <div class="field">
@@ -83,6 +121,10 @@
     <p style="font-size:13px;color:#8a8d93;margin:-10px 0 20px;">
       Don't see a parent listed? They need a Supabase account created first (Authentication &gt; Users &gt; Add User) before they can be linked to a student.
     </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <input type="search" id="studentSearch" placeholder="Search by name or admission number..." style="font-family:inherit;font-size:14px;padding:9px 12px;border:2px solid #cfd8e8;border-radius:6px;flex:1;min-width:220px;">
+    </div>
+    <div id="studentPager" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;"></div>
     <div id="studentList"><p class="placeholder-note">Loading students...</p></div>
   </div>
 
@@ -336,6 +378,44 @@
     return div.innerHTML;
   }
 
+  // Supabase returns at most 1000 rows per request. This keeps asking until it has them all.
+  async function fetchAll(makeQuery) {
+    const all = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await makeQuery().range(from, from + 999);
+      if (error) return { data: null, error };
+      all.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    return { data: all, error: null };
+  }
+
+  // Puts a small "type to search" box above a long dropdown
+  function addFilterBox(selectId, placeholder) {
+    const sel = document.getElementById(selectId);
+    if (!sel || sel.dataset.hasFilter) return;
+    sel.dataset.hasFilter = '1';
+    const box = document.createElement('input');
+    box.type = 'search';
+    box.placeholder = placeholder || 'Type to search...';
+    box.style.cssText = 'font-family:inherit;font-size:14px;padding:9px 12px;border:2px solid #cfd8e8;border-radius:6px;margin-bottom:6px;width:100%;box-sizing:border-box;';
+    box.addEventListener('input', () => {
+      const q = box.value.trim().toLowerCase();
+      let firstMatch = null;
+      Array.from(sel.options).forEach((o, i) => {
+        const show = i === 0 && !o.value ? true : (!q || o.textContent.toLowerCase().includes(q));
+        o.hidden = !show;
+        o.disabled = !show;
+        if (show && o.value && !firstMatch) firstMatch = o;
+      });
+      if (q && firstMatch && sel.selectedOptions[0] && sel.selectedOptions[0].disabled) {
+        sel.value = firstMatch.value;
+        sel.dispatchEvent(new Event('change'));
+      }
+    });
+    sel.parentNode.insertBefore(box, sel);
+  }
+
   function formatDate(iso) {
     const d = new Date(iso);
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -417,11 +497,11 @@
   // ---------- Students ----------
   async function loadParentOptions() {
     const select = document.getElementById('stParent');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('profiles')
       .select('id, full_name, email')
       .eq('role', 'parent')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No parent accounts found yet</option>';
@@ -431,6 +511,7 @@
     select.innerHTML = data.map(p =>
       `<option value="${p.id}">${escapeHtml(p.full_name || 'Unnamed')} (${escapeHtml(p.email || 'no email')})</option>`
     ).join('');
+    addFilterBox('stParent', 'Type a parent name or email...');
   }
 
   // Shrinks a photo to at most 500px so uploads stay small and fast
@@ -452,21 +533,42 @@
     });
   }
 
+  const STUDENT_PAGE = 50;
+  let studentPage = 0;
+  let studentSearch = '';
+
   async function loadStudents() {
     const listEl = document.getElementById('studentList');
-    const { data, error } = await supabaseClient
+    let q = supabaseClient
       .from('students')
-      .select('*, profiles(full_name, email)')
-      .order('created_at', { ascending: false });
+      .select('*, profiles(full_name, email)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(studentPage * STUDENT_PAGE, studentPage * STUDENT_PAGE + STUDENT_PAGE - 1);
+    if (studentSearch) {
+      const t = studentSearch.replace(/[%,()]/g, ' ').trim();
+      q = q.or(`full_name.ilike.%${t}%,admission_number.ilike.%${t}%`);
+    }
+    const { data, error, count } = await q;
+    const total = count || 0;
+    const pagerEl = document.getElementById('studentPager');
 
     if (error) {
       listEl.innerHTML = `<p class="placeholder-note">Could not load students: ${escapeHtml(error.message)}</p>`;
       return;
     }
     if (!data || data.length === 0) {
-      listEl.innerHTML = `<p class="placeholder-note">No students added yet.</p>`;
+      listEl.innerHTML = `<p class="placeholder-note">${studentSearch ? 'No student matches that search.' : 'No students added yet.'}</p>`;
+      pagerEl.innerHTML = '';
       return;
     }
+
+    const lastPage = Math.max(0, Math.ceil(total / STUDENT_PAGE) - 1);
+    pagerEl.innerHTML = `
+      <span style="font-size:13.5px;color:#5b6170;">${total} student${total === 1 ? '' : 's'} · page ${studentPage + 1} of ${lastPage + 1}</span>
+      <button class="btn-outline" id="stPrev" style="padding:5px 12px;font-size:13px;" ${studentPage === 0 ? 'disabled' : ''}>&larr; Previous</button>
+      <button class="btn-outline" id="stNext" style="padding:5px 12px;font-size:13px;" ${studentPage >= lastPage ? 'disabled' : ''}>Next &rarr;</button>`;
+    document.getElementById('stPrev').onclick = () => { studentPage--; loadStudents(); };
+    document.getElementById('stNext').onclick = () => { studentPage++; loadStudents(); };
 
     listEl.innerHTML = `
       <table>
@@ -535,6 +637,14 @@
     });
   }
 
+  (function () {
+    let timer = null;
+    document.getElementById('studentSearch').addEventListener('input', (e) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { studentSearch = e.target.value.trim(); studentPage = 0; loadStudents(); }, 350);
+    });
+  })();
+
   document.getElementById('studentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const note = document.getElementById('studentNote');
@@ -574,15 +684,156 @@
     loadStudents();
   });
 
+  // ---------- Bulk import ----------
+  (function () {
+    const COLS = ['student_name', 'admission_number', 'program', 'class_name', 'parent_name', 'parent_email', 'parent_phone'];
+    let rows = [];
+
+    function parseCSV(text) {
+      text = text.replace(/^﻿/, '');
+      const out = []; let row = [], cur = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) {
+          if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+          else if (c === '"') q = false;
+          else cur += c;
+        } else if (c === '"') q = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n' || c === '\r') {
+          if (c === '\r' && text[i + 1] === '\n') i++;
+          row.push(cur); cur = '';
+          if (row.some(x => x.trim() !== '')) out.push(row);
+          row = [];
+        } else cur += c;
+      }
+      row.push(cur);
+      if (row.some(x => x.trim() !== '')) out.push(row);
+      return out;
+    }
+
+    function makePassword() {
+      const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const a = new Uint32Array(8); crypto.getRandomValues(a);
+      return Array.from(a, n => chars[n % chars.length]).join('');
+    }
+
+    function download(name, text) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' }));
+      a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    }
+    const csvCell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+
+    document.getElementById('biTemplate').addEventListener('click', () => {
+      download('student-import-template.csv',
+        COLS.join(',') + '\n' +
+        'Ada Obi,DMA/2026/001,Nursery,Nursery 2,Mrs Chioma Obi,chioma@example.com,08031234567\n' +
+        'Eze Obi,DMA/2026/002,Primary,Primary 1,Mrs Chioma Obi,chioma@example.com,08031234567\n');
+    });
+
+    document.getElementById('biFile').addEventListener('change', async (e) => {
+      const f = e.target.files[0];
+      const prev = document.getElementById('biPreview');
+      const go = document.getElementById('biGo');
+      const note = document.getElementById('biNote');
+      document.getElementById('biResult').innerHTML = '';
+      note.textContent = ''; go.style.display = 'none'; rows = [];
+      if (!f) { prev.innerHTML = ''; return; }
+      const table = parseCSV(await f.text());
+      const head = (table.shift() || []).map(h => h.trim().toLowerCase());
+      const missing = COLS.filter(c => c !== 'class_name' && c !== 'parent_phone' && !head.includes(c));
+      if (missing.length) {
+        prev.innerHTML = '';
+        note.className = 'form-note note-error';
+        note.textContent = 'Your file is missing these column headings: ' + missing.join(', ') + '. Please start from the template.';
+        return;
+      }
+      rows = table.map(r => {
+        const o = {};
+        head.forEach((h, i) => { o[h] = (r[i] || '').trim(); });
+        return o;
+      });
+      prev.innerHTML = `
+        <p style="font-size:14px;margin-bottom:8px;"><b>${rows.length}</b> row(s) found. First few:</p>
+        <div style="overflow-x:auto;margin-bottom:14px;"><table>
+          <thead><tr>${COLS.map(c => `<th>${c.replace('_', ' ')}</th>`).join('')}</tr></thead>
+          <tbody>${rows.slice(0, 5).map(o => `<tr>${COLS.map(c => `<td>${escapeHtml(o[c] || '')}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></div>`;
+      if (rows.length) go.style.display = 'inline-block';
+    });
+
+    document.getElementById('biGo').addEventListener('click', async () => {
+      const go = document.getElementById('biGo');
+      const note = document.getElementById('biNote');
+      const session = document.getElementById('biSession').value.trim();
+      const term = document.getElementById('biTerm').value;
+      const hasClass = rows.some(r => r.class_name);
+      if (hasClass && !session) {
+        note.className = 'form-note note-error';
+        note.textContent = 'Your file has a class column, so please type the Session (e.g. 2026/2027) first.';
+        return;
+      }
+      if (!confirm(`Import ${rows.length} row(s) now?`)) return;
+      go.disabled = true; note.className = 'form-note'; note.textContent = '';
+
+      // one password per NEW parent email, same for all of their children
+      const pw = {};
+      rows.forEach(r => { const k = (r.parent_email || '').toLowerCase(); if (k && !pw[k]) pw[k] = makePassword(); });
+
+      const results = [];
+      for (let i = 0; i < rows.length; i += 50) {
+        const chunk = rows.slice(i, i + 50).map(r => ({
+          ...r, password: pw[(r.parent_email || '').toLowerCase()] || ''
+        }));
+        go.textContent = `Importing ${Math.min(i + 50, rows.length)} / ${rows.length}...`;
+        const { data, error } = await supabaseClient.rpc('admin_import_students', {
+          p_rows: chunk, p_term: hasClass ? term : null, p_session: hasClass ? session : null
+        });
+        if (error) {
+          note.className = 'form-note note-error';
+          note.textContent = 'Stopped at row ' + (i + 1) + ': ' + error.message +
+            '. Rows before this point were saved; fix the problem, then import again (existing admission numbers are skipped).';
+          break;
+        }
+        results.push(...data);
+      }
+      go.disabled = false; go.textContent = 'Import';
+
+      const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
+      const created = {};
+      ok.filter(r => r.new_parent).forEach(r => { created[r.parent_email] = pw[r.parent_email]; });
+      const nNew = Object.keys(created).length;
+
+      document.getElementById('biResult').innerHTML = `
+        <p style="margin:14px 0 8px;font-size:15px;"><b>${ok.length}</b> student(s) added, <b>${nNew}</b> new parent login(s) created, <b style="color:${bad.length ? 'var(--error)' : 'inherit'}">${bad.length}</b> row(s) skipped.</p>
+        ${nNew ? `<p style="font-size:13.5px;color:#5b6170;margin-bottom:8px;">The passwords are shown only now. Download the list and keep it safe, then hand each parent their login.</p>
+          <button type="button" class="btn-outline" id="biCreds" style="padding:6px 14px;font-size:13px;margin-right:8px;">Download parent logins (CSV)</button>` : ''}
+        ${bad.length ? `<button type="button" class="btn-outline" id="biErrs" style="padding:6px 14px;font-size:13px;">Download skipped rows (CSV)</button>
+          <div style="overflow-x:auto;margin-top:12px;"><table><thead><tr><th>Admission No.</th><th>Why it was skipped</th></tr></thead>
+          <tbody>${bad.slice(0, 50).map(r => `<tr><td>${escapeHtml(r.admission_number)}</td><td>${escapeHtml(r.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+
+      const c = document.getElementById('biCreds');
+      if (c) c.onclick = () => download('parent-logins.csv',
+        'parent_email,temporary_password\n' + Object.entries(created).map(([e, p]) => csvCell(e) + ',' + csvCell(p)).join('\n'));
+      const b = document.getElementById('biErrs');
+      if (b) b.onclick = () => download('skipped-rows.csv',
+        'admission_number,parent_email,reason\n' + bad.map(r => [r.admission_number, r.parent_email, r.error].map(csvCell).join(',')).join('\n'));
+
+      studentPage = 0; loadParentOptions(); loadStudents();
+      loadResultStudentOptions(); loadFeeStudentOptions(); loadTermStudentOptions(); loadPrintStudentOptions();
+    });
+  })();
+
   // ---------- Results ----------
   let selectedStudentId = null;
 
   async function loadResultStudentOptions() {
     const select = document.getElementById('resStudentSelect');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('students')
       .select('id, full_name, admission_number')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
@@ -592,6 +843,7 @@
     select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('resStudentSelect', 'Type a name or admission number...');
   }
 
   document.getElementById('resStudentSelect').addEventListener('change', (e) => {
@@ -743,8 +995,8 @@
 
   async function loadTermStudentOptions() {
     const select = document.getElementById('tdStudent');
-    const { data, error } = await supabaseClient
-      .from('students').select('id, full_name, admission_number').order('full_name', { ascending: true });
+    const { data, error } = await fetchAll(() => supabaseClient
+      .from('students').select('id, full_name, admission_number').order('full_name', { ascending: true }));
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
       return;
@@ -752,6 +1004,7 @@
     select.innerHTML = '<option value="">- Choose a student -</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('tdStudent', 'Type a name or admission number...');
   }
 
   const numOrNull = (v) => (v === '' || v === null || v === undefined) ? null : Number(v);
@@ -854,10 +1107,10 @@
 
   async function loadFeeStudentOptions() {
     const select = document.getElementById('feeStudentSelect');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('students')
       .select('id, full_name, admission_number')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
@@ -867,6 +1120,7 @@
     select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('feeStudentSelect', 'Type a name or admission number...');
   }
 
   document.getElementById('feeStudentSelect').addEventListener('change', (e) => {
@@ -990,10 +1244,10 @@
   // ---------- Print Report Card (no on-screen preview) ----------
   async function loadPrintStudentOptions() {
     const select = document.getElementById('printStudentSelect');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('students')
       .select('id, full_name, admission_number, program')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
@@ -1004,6 +1258,7 @@
     select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('printStudentSelect', 'Type a name or admission number...');
   }
 
   document.getElementById('printStudentSelect').addEventListener('change', async (e) => {
