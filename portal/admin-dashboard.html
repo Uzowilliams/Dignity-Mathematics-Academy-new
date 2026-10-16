@@ -88,6 +88,55 @@
   </div>
 
   <div class="card">
+    <h2>Bulk Upload Results</h2>
+    <p style="font-size:14px;color:#5b6170;margin-bottom:14px;">
+      Teachers who don't use the website can fill a spreadsheet and send it to you. You upload it here and the results are saved for every child in it. Uploading the same subject again for the same child simply <b>updates</b> it, so fixing a mistake is easy.
+    </p>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-bottom:14px;">
+      <div class="field">
+        <label for="brTerm">Term</label>
+        <select id="brTerm" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option>First Term</option><option>Second Term</option><option selected>Third Term</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="brSession">Session</label>
+        <input type="text" id="brSession" placeholder="e.g. 2026/2027">
+      </div>
+    </div>
+
+    <p style="font-size:14px;margin:6px 0 8px;"><b>Step 1 - Get a sheet for the teacher</b> (optional but easiest)</p>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr auto;align-items:end;margin-bottom:6px;">
+      <div class="field">
+        <label for="brClass">Class</label>
+        <select id="brClass" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Press "Load classes" first</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="brSubject">Subject</label>
+        <input type="text" id="brSubject" placeholder="e.g. Mathematics">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-outline" id="brLoad" style="padding:10px 14px;font-size:13.5px;">Load classes</button>
+        <button type="button" class="btn-outline" id="brSheet" style="padding:10px 14px;font-size:13.5px;">Download class sheet</button>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#8a8d93;margin:0 0 18px;">
+      The sheet comes with every child's admission number and name already filled in. The teacher only types CA (out of 40) and Exam (out of 60) and a remark. Children only show up here after you have saved their class under "Term Details &amp; Ratings" (or in the student import).
+    </p>
+
+    <p style="font-size:14px;margin:6px 0 8px;"><b>Step 2 - Upload the filled sheet</b> (CSV)</p>
+    <div class="field" style="max-width:420px;margin-bottom:14px;">
+      <input type="file" id="brFile" accept=".csv,text/csv">
+    </div>
+    <div id="brPreview"></div>
+    <button type="button" class="btn" id="brGo" style="width:auto;padding:12px 24px;display:none;">Upload results</button>
+    <p class="form-note" id="brNote"></p>
+    <div id="brResult"></div>
+  </div>
+
+  <div class="card">
     <h2>Students</h2>
     <form id="studentForm" style="display:grid;gap:14px;margin-bottom:24px;grid-template-columns:1fr 1fr;">
       <div class="field">
@@ -724,6 +773,7 @@
       a.download = name; document.body.appendChild(a); a.click(); a.remove();
     }
     const csvCell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    window.__csv = { parseCSV, download, csvCell };
 
     document.getElementById('biTemplate').addEventListener('click', () => {
       download('student-import-template.csv',
@@ -822,6 +872,106 @@
 
       studentPage = 0; loadParentOptions(); loadStudents();
       loadResultStudentOptions(); loadFeeStudentOptions(); loadTermStudentOptions(); loadPrintStudentOptions();
+    });
+  })();
+
+  // ---------- Bulk results upload ----------
+  (function () {
+    const REQUIRED = ['admission_number', 'subject', 'ca', 'exam'];
+    let rows = [];
+    const $ = (id) => document.getElementById(id);
+
+    $('brLoad').addEventListener('click', async () => {
+      const session = $('brSession').value.trim(), term = $('brTerm').value;
+      const note = $('brNote');
+      if (!session) { note.className = 'form-note note-error'; note.textContent = 'Type the Session first.'; return; }
+      note.textContent = '';
+      const { data, error } = await fetchAll(() => supabaseClient.from('term_info')
+        .select('class_name').eq('term', term).eq('session', session).order('class_name', { ascending: true }));
+      if (error) { note.className = 'form-note note-error'; note.textContent = error.message; return; }
+      const names = [...new Set((data || []).map(d => d.class_name))];
+      $('brClass').innerHTML = names.length
+        ? names.map(n => `<option>${escapeHtml(n)}</option>`).join('')
+        : '<option value="">No classes saved for this term yet</option>';
+    });
+
+    $('brSheet').addEventListener('click', async () => {
+      const session = $('brSession').value.trim(), term = $('brTerm').value;
+      const cls = $('brClass').value, subject = $('brSubject').value.trim();
+      const note = $('brNote');
+      if (!session || !cls) { note.className = 'form-note note-error'; note.textContent = 'Type the Session, press "Load classes", then choose a class.'; return; }
+      note.textContent = '';
+      const { data, error } = await fetchAll(() => supabaseClient.from('term_info')
+        .select('students(full_name, admission_number)')
+        .eq('term', term).eq('session', session).eq('class_name', cls));
+      if (error) { note.className = 'form-note note-error'; note.textContent = error.message; return; }
+      const list = (data || []).map(d => d.students).filter(Boolean)
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      const { csvCell, download } = window.__csv;
+      download(`results-${cls.replace(/\W+/g, '-')}-${(subject || 'subject').replace(/\W+/g, '-')}.csv`,
+        'admission_number,student_name,subject,ca,exam,remark\n' +
+        list.map(s => [s.admission_number, s.full_name, subject, '', '', ''].map(csvCell).join(',')).join('\n'));
+    });
+
+    $('brFile').addEventListener('change', async (e) => {
+      const f = e.target.files[0];
+      const note = $('brNote'), go = $('brGo'), prev = $('brPreview');
+      $('brResult').innerHTML = ''; note.textContent = ''; go.style.display = 'none'; rows = [];
+      if (!f) { prev.innerHTML = ''; return; }
+      const table = window.__csv.parseCSV(await f.text());
+      const head = (table.shift() || []).map(h => h.trim().toLowerCase());
+      const missing = REQUIRED.filter(c => !head.includes(c));
+      if (missing.length) {
+        prev.innerHTML = '';
+        note.className = 'form-note note-error';
+        note.textContent = 'Your file is missing these column headings: ' + missing.join(', ') + '. Please use the class sheet or keep the headings: admission_number, subject, ca, exam, remark.';
+        return;
+      }
+      rows = table.map(r => { const o = {}; head.forEach((h, i) => { o[h] = (r[i] || '').trim(); }); return o; })
+        .filter(o => o.admission_number || o.subject || o.ca || o.exam);
+      const empty = rows.filter(o => o.ca === '' && o.exam === '').length;
+      prev.innerHTML = `
+        <p style="font-size:14px;margin-bottom:8px;"><b>${rows.length}</b> row(s) found${empty ? `, <b>${empty}</b> with no scores yet (they will be skipped)` : ''}. First few:</p>
+        <div style="overflow-x:auto;margin-bottom:14px;"><table>
+          <thead><tr><th>Admission no.</th><th>Name</th><th>Subject</th><th>CA</th><th>Exam</th><th>Remark</th></tr></thead>
+          <tbody>${rows.slice(0, 6).map(o => `<tr><td>${escapeHtml(o.admission_number)}</td><td>${escapeHtml(o.student_name || '')}</td><td>${escapeHtml(o.subject)}</td><td>${escapeHtml(o.ca)}</td><td>${escapeHtml(o.exam)}</td><td>${escapeHtml(o.remark || '')}</td></tr>`).join('')}</tbody>
+        </table></div>`;
+      if (rows.length) go.style.display = 'inline-block';
+    });
+
+    $('brGo').addEventListener('click', async () => {
+      const go = $('brGo'), note = $('brNote');
+      const session = $('brSession').value.trim(), term = $('brTerm').value;
+      if (!session) { note.className = 'form-note note-error'; note.textContent = 'Type the Session first (e.g. 2026/2027).'; return; }
+      const todo = rows.filter(o => !(o.ca === '' && o.exam === ''));
+      if (!todo.length) { note.className = 'form-note note-error'; note.textContent = 'No row has a CA or Exam score yet.'; return; }
+      if (!confirm(`Upload ${todo.length} result(s) for ${term}, ${session}?`)) return;
+      go.disabled = true; note.className = 'form-note'; note.textContent = '';
+      const results = [];
+      for (let i = 0; i < todo.length; i += 200) {
+        go.textContent = `Uploading ${Math.min(i + 200, todo.length)} / ${todo.length}...`;
+        const { data, error } = await supabaseClient.rpc('admin_import_results', {
+          p_rows: todo.slice(i, i + 200).map(o => ({ admission_number: o.admission_number, subject: o.subject, ca: o.ca, exam: o.exam, remark: o.remark || '' })),
+          p_term: term, p_session: session
+        });
+        if (error) {
+          note.className = 'form-note note-error';
+          note.textContent = 'Stopped at row ' + (i + 1) + ': ' + error.message + '. Rows before this point were saved; you can upload the same file again safely.';
+          break;
+        }
+        results.push(...data);
+      }
+      go.disabled = false; go.textContent = 'Upload results';
+      const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
+      const added = ok.filter(r => r.action === 'added').length, updated = ok.length - added;
+      $('brResult').innerHTML = `
+        <p style="margin:14px 0 8px;font-size:15px;"><b>${added}</b> result(s) added, <b>${updated}</b> updated, <b style="color:${bad.length ? 'var(--error)' : 'inherit'}">${bad.length}</b> skipped.</p>
+        ${bad.length ? `<button type="button" class="btn-outline" id="brErrs" style="padding:6px 14px;font-size:13px;">Download skipped rows (CSV)</button>
+          <div style="overflow-x:auto;margin-top:12px;"><table><thead><tr><th>Admission no.</th><th>Subject</th><th>Why it was skipped</th></tr></thead>
+          <tbody>${bad.slice(0, 50).map(r => `<tr><td>${escapeHtml(r.admission_number)}</td><td>${escapeHtml(r.subject)}</td><td>${escapeHtml(r.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+      const b = $('brErrs');
+      if (b) b.onclick = () => { const { csvCell, download } = window.__csv;
+        download('skipped-results.csv', 'admission_number,subject,reason\n' + bad.map(r => [r.admission_number, r.subject, r.error].map(csvCell).join(',')).join('\n')); };
     });
   })();
 
