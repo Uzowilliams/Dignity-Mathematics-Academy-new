@@ -7,6 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Fredoka:wght@600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal-style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/img/favicon-16.png">
+  <link rel="shortcut icon" href="../assets/img/favicon.ico">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+  <meta name="theme-color" content="#1565D8">
 </head>
 <body>
 
@@ -29,7 +35,7 @@
 
   <div class="card">
     <h2>Inquiries</h2>
-    <p class="placeholder-note">Coming in Phase 2 — this will list every website inquiry in one place.</p>
+    <div id="inquiryList"><p class="placeholder-note">Loading inquiries...</p></div>
   </div>
 
   <div class="card">
@@ -47,6 +53,87 @@
       <p class="form-note" id="annNote"></p>
     </form>
     <div id="annList"><p class="placeholder-note">Loading announcements...</p></div>
+  </div>
+
+  <div class="card">
+    <h2>Bulk Import Students</h2>
+    <p style="font-size:14px;color:#5b6170;margin-bottom:14px;">
+      Add many students (old and new) at once from an Excel/CSV file. Parent logins are created automatically for new parents, and brothers and sisters with the same parent email share one login. <b>If a parent has no email, leave parent_email empty and fill parent_phone</b>: the phone number becomes their login.
+    </p>
+    <ol style="font-size:14px;color:#5b6170;margin:0 0 14px 18px;line-height:1.7;">
+      <li><button type="button" class="btn-outline" id="biTemplate" style="padding:4px 12px;font-size:13px;">Download the template</button> and open it in Excel.</li>
+      <li>Fill one row per child, then <b>Save As &rarr; CSV</b>.</li>
+      <li>Choose the file below, check the preview, and press Import.</li>
+    </ol>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;">
+      <div class="field">
+        <label for="biTerm">Term (for the Class column)</label>
+        <select id="biTerm" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option>First Term</option><option>Second Term</option><option selected>Third Term</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="biSession">Session</label>
+        <input type="text" id="biSession" placeholder="e.g. 2026/2027">
+      </div>
+      <div class="field">
+        <label for="biFile">CSV file</label>
+        <input type="file" id="biFile" accept=".csv,text/csv">
+      </div>
+    </div>
+    <div id="biPreview"></div>
+    <button type="button" class="btn" id="biGo" style="width:auto;padding:12px 24px;display:none;">Import</button>
+    <p class="form-note" id="biNote"></p>
+    <div id="biResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Bulk Upload Results</h2>
+    <p style="font-size:14px;color:#5b6170;margin-bottom:14px;">
+      Teachers who don't use the website can fill a spreadsheet and send it to you. You upload it here and the results are saved for every child in it. Uploading the same subject again for the same child simply <b>updates</b> it, so fixing a mistake is easy.
+    </p>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-bottom:14px;">
+      <div class="field">
+        <label for="brTerm">Term</label>
+        <select id="brTerm" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option>First Term</option><option>Second Term</option><option selected>Third Term</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="brSession">Session</label>
+        <input type="text" id="brSession" placeholder="e.g. 2026/2027">
+      </div>
+    </div>
+
+    <p style="font-size:14px;margin:6px 0 8px;"><b>Step 1 - Get a sheet for the teacher</b> (optional but easiest)</p>
+    <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr auto;align-items:end;margin-bottom:6px;">
+      <div class="field">
+        <label for="brClass">Class</label>
+        <select id="brClass" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Press "Load classes" first</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="brSubject">Subject</label>
+        <input type="text" id="brSubject" placeholder="e.g. Mathematics">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-outline" id="brLoad" style="padding:10px 14px;font-size:13.5px;">Load classes</button>
+        <button type="button" class="btn-outline" id="brSheet" style="padding:10px 14px;font-size:13.5px;">Download class sheet</button>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#8a8d93;margin:0 0 18px;">
+      The sheet comes with every child's admission number and name already filled in. The teacher only types CA (out of 40) and Exam (out of 60) and a remark. Children only show up here after you have saved their class under "Term Details &amp; Ratings" (or in the student import).
+    </p>
+
+    <p style="font-size:14px;margin:6px 0 8px;"><b>Step 2 - Upload the filled sheet</b> (CSV)</p>
+    <div class="field" style="max-width:420px;margin-bottom:14px;">
+      <input type="file" id="brFile" accept=".csv,text/csv">
+    </div>
+    <div id="brPreview"></div>
+    <button type="button" class="btn" id="brGo" style="width:auto;padding:12px 24px;display:none;">Upload results</button>
+    <p class="form-note" id="brNote"></p>
+    <div id="brResult"></div>
   </div>
 
   <div class="card">
@@ -83,6 +170,10 @@
     <p style="font-size:13px;color:#8a8d93;margin:-10px 0 20px;">
       Don't see a parent listed? They need a Supabase account created first (Authentication &gt; Users &gt; Add User) before they can be linked to a student.
     </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <input type="search" id="studentSearch" placeholder="Search by name or admission number..." style="font-family:inherit;font-size:14px;padding:9px 12px;border:2px solid #cfd8e8;border-radius:6px;flex:1;min-width:220px;">
+    </div>
+    <div id="studentPager" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;"></div>
     <div id="studentList"><p class="placeholder-note">Loading students...</p></div>
   </div>
 
@@ -114,16 +205,24 @@
           <input type="text" id="resSubject" required placeholder="e.g. Mathematics">
         </div>
         <div class="field">
-          <label for="resScore">Score (out of 100)</label>
-          <input type="number" id="resScore" min="0" max="100" required placeholder="e.g. 85">
+          <label for="resCA">CA (out of 40)</label>
+          <input type="number" id="resCA" min="0" max="40" step="any" required placeholder="e.g. 34">
         </div>
         <div class="field">
-          <label for="resGrade">Grade</label>
-          <input type="text" id="resGrade" required placeholder="e.g. A">
+          <label for="resExam">Exam (out of 60)</label>
+          <input type="number" id="resExam" min="0" max="60" step="any" required placeholder="e.g. 53">
         </div>
         <div class="field">
-          <label for="resRemarks">Remarks</label>
-          <input type="text" id="resRemarks" placeholder="e.g. Excellent">
+          <label for="resRemarks">Remark</label>
+          <input type="text" id="resRemarks" list="remarkOptions" placeholder="e.g. Excellent">
+          <datalist id="remarkOptions">
+            <option value="Excellent"><option value="Very Good"><option value="Good">
+            <option value="Fair"><option value="Poor">
+          </datalist>
+        </div>
+        <div class="field">
+          <label>Total (CA + Exam)</label>
+          <div id="resTotalPreview" style="padding:12px 14px;font-weight:700;font-size:18px;">-</div>
         </div>
         <div style="grid-column:1 / -1;">
           <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="addResultBtn">Add Result</button>
@@ -133,6 +232,73 @@
       <div id="resultList"></div>
     </div>
     <p id="resNoStudentNote" class="placeholder-note">Select a student above to view or add results.</p>
+  </div>
+
+  <div class="card">
+    <h2>Term Details &amp; Ratings</h2>
+    <p style="font-size:13.5px;color:#6b7a90;margin:-8px 0 16px;">
+      Everything on the report card that is not a subject score: class, attendance, remarks, weight, height and the A to E ratings.
+      Positions, class high/low and averages are worked out for you. Every child needs this filled in, because it tells the system which class they belong to.
+    </p>
+    <div style="display:grid;gap:14px;grid-template-columns:2fr 1fr 1fr;margin-bottom:10px;">
+      <div class="field">
+        <label for="tdStudent">Student</label>
+        <select id="tdStudent" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">Loading students...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tdTerm">Term</label>
+        <select id="tdTerm" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="First Term">First Term</option>
+          <option value="Second Term">Second Term</option>
+          <option value="Third Term">Third Term</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tdSession">Session</label>
+        <input type="text" id="tdSession" placeholder="e.g. 2025/2026">
+      </div>
+    </div>
+
+    <form id="termForm" style="display:none;">
+      <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr 1fr;">
+        <div class="field"><label for="tdClass">Class</label><input type="text" id="tdClass" required placeholder="e.g. 5th"></div>
+        <div class="field"><label for="tdAge">Age</label><input type="number" id="tdAge" min="0" placeholder="e.g. 9"></div>
+        <div class="field"><label for="tdTeacher">Teacher</label><input type="text" id="tdTeacher" placeholder="e.g. Nwangwu F."></div>
+        <div class="field"><label for="tdW1">Weight, start of term (kg)</label><input type="number" id="tdW1" step="any" placeholder="e.g. 31"></div>
+        <div class="field"><label for="tdW2">Weight, end of term (kg)</label><input type="number" id="tdW2" step="any" placeholder="e.g. 32"></div>
+        <div class="field"><label>&nbsp;</label><div></div></div>
+        <div class="field"><label for="tdH1">Height, start of term (cm)</label><input type="number" id="tdH1" step="any" placeholder="e.g. 133"></div>
+        <div class="field"><label for="tdH2">Height, end of term (cm)</label><input type="number" id="tdH2" step="any" placeholder="e.g. 134.5"></div>
+        <div class="field"><label>&nbsp;</label><div></div></div>
+        <div class="field"><label for="tdOpened">Times school opened</label><input type="number" id="tdOpened" min="0" placeholder="e.g. 108"></div>
+        <div class="field"><label for="tdAbsent">Times absent</label><input type="number" id="tdAbsent" min="0" placeholder="e.g. 0"></div>
+        <div class="field">
+          <label for="tdStatus">Status</label>
+          <select id="tdStatus" style="font-family:inherit;font-size:15px;padding:12px 14px;border:2px solid #cfd8e8;border-radius:6px;">
+            <option value="">(not decided yet)</option>
+            <option value="Promoted">Promoted</option>
+            <option value="Not Promoted">Not Promoted</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;gap:14px;grid-template-columns:1fr;">
+        <div class="field"><label for="tdOverall">Overall remark</label><input type="text" id="tdOverall" placeholder="e.g. A very good result"></div>
+        <div class="field"><label for="tdTeacherRemark">Class teacher's remark</label><input type="text" id="tdTeacherRemark" placeholder="e.g. Good effort"></div>
+        <div class="field"><label for="tdHeadRemark">Head Master/Mistress remark</label><input type="text" id="tdHeadRemark" placeholder="e.g. A very good result"></div>
+      </div>
+
+      <h3 style="font-size:15.5px;margin:10px 0 4px;">Affective Traits</h3>
+      <p style="font-size:12.5px;color:#6b7a90;margin:0 0 10px;">A Excellent, B Good, C Average, D Below Average, E Poor</p>
+      <div id="tdAffective" style="display:grid;gap:8px 20px;grid-template-columns:1fr 1fr;margin-bottom:18px;"></div>
+      <h3 style="font-size:15.5px;margin:10px 0 10px;">Psychomotor Skills</h3>
+      <div id="tdPsycho" style="display:grid;gap:8px 20px;grid-template-columns:1fr 1fr;margin-bottom:20px;"></div>
+
+      <button type="submit" class="btn" style="width:auto;padding:12px 24px;" id="saveTermBtn">Save Term Details</button>
+      <p class="form-note" id="termNote"></p>
+    </form>
+    <p id="tdHint" class="placeholder-note">Choose a student and type the session to begin.</p>
   </div>
 
   <div class="card">
@@ -208,6 +374,7 @@
 <div id="printArea"></div>
 
 <script src="supabase-client.js"></script>
+<script src="report-card.js"></script>
 <script>
   let currentProfile = null;
 
@@ -217,11 +384,13 @@
     currentProfile = profile;
     document.getElementById('whoami').textContent =
       `Signed in as ${profile.full_name || 'Admin'} · Staff account`;
+    loadInquiries();
     loadAnnouncements();
     loadParentOptions();
     loadStudents();
     loadResultStudentOptions();
     loadFeeStudentOptions();
+    loadTermStudentOptions();
     loadPrintStudentOptions();
   })();
 
@@ -229,10 +398,71 @@
     logout('admin-login.html');
   });
 
+
+  async function loadInquiries() {
+    const listEl = document.getElementById('inquiryList');
+    const { data, error } = await supabaseClient
+      .from('inquiries').select('*').order('created_at', { ascending: false });
+    if (error) {
+      listEl.innerHTML = `<p class="placeholder-note">Could not load inquiries: ${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listEl.innerHTML = '<p class="placeholder-note">No inquiries yet.</p>';
+      return;
+    }
+    listEl.innerHTML = data.map(i => `
+      <div style="border-bottom:1px solid #e1e8f2;padding:12px 0;">
+        <strong>${escapeHtml(i.name || '')}</strong>
+        <span style="color:#6b7a90;font-size:13px;"> · ${formatDate(i.created_at)}</span><br>
+        <span style="font-size:14px;">📞 ${escapeHtml(i.phone || '')} &nbsp; ✉️ ${escapeHtml(i.email || '')}</span><br>
+        <span style="font-size:14px;"><b>Program:</b> ${escapeHtml(i.program || '-')}</span><br>
+        <span style="font-size:14px;">${escapeHtml(i.message || '')}</span>
+      </div>`).join('');
+  }
+
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // Supabase returns at most 1000 rows per request. This keeps asking until it has them all.
+  async function fetchAll(makeQuery) {
+    const all = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await makeQuery().range(from, from + 999);
+      if (error) return { data: null, error };
+      all.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    return { data: all, error: null };
+  }
+
+  // Puts a small "type to search" box above a long dropdown
+  function addFilterBox(selectId, placeholder) {
+    const sel = document.getElementById(selectId);
+    if (!sel || sel.dataset.hasFilter) return;
+    sel.dataset.hasFilter = '1';
+    const box = document.createElement('input');
+    box.type = 'search';
+    box.placeholder = placeholder || 'Type to search...';
+    box.style.cssText = 'font-family:inherit;font-size:14px;padding:9px 12px;border:2px solid #cfd8e8;border-radius:6px;margin-bottom:6px;width:100%;box-sizing:border-box;';
+    box.addEventListener('input', () => {
+      const q = box.value.trim().toLowerCase();
+      let firstMatch = null;
+      Array.from(sel.options).forEach((o, i) => {
+        const show = i === 0 && !o.value ? true : (!q || o.textContent.toLowerCase().includes(q));
+        o.hidden = !show;
+        o.disabled = !show;
+        if (show && o.value && !firstMatch) firstMatch = o;
+      });
+      if (q && firstMatch && sel.selectedOptions[0] && sel.selectedOptions[0].disabled) {
+        sel.value = firstMatch.value;
+        sel.dispatchEvent(new Event('change'));
+      }
+    });
+    sel.parentNode.insertBefore(box, sel);
   }
 
   function formatDate(iso) {
@@ -316,11 +546,11 @@
   // ---------- Students ----------
   async function loadParentOptions() {
     const select = document.getElementById('stParent');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('profiles')
       .select('id, full_name, email')
       .eq('role', 'parent')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No parent accounts found yet</option>';
@@ -328,30 +558,71 @@
     }
 
     select.innerHTML = data.map(p =>
-      `<option value="${p.id}">${escapeHtml(p.full_name || 'Unnamed')} (${escapeHtml(p.email || 'no email')})</option>`
+      `<option value="${p.id}">${escapeHtml(p.full_name || 'Unnamed')} (${escapeHtml(prettyLogin(p.email) || 'no email')})</option>`
     ).join('');
+    addFilterBox('stParent', 'Type a parent name or email...');
   }
+
+  // Shrinks a photo to at most 500px so uploads stay small and fast
+  function resizePhoto(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('Could not process the image')), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => reject(new Error('That file is not a valid image'));
+      img.src = url;
+    });
+  }
+
+  const STUDENT_PAGE = 50;
+  let studentPage = 0;
+  let studentSearch = '';
 
   async function loadStudents() {
     const listEl = document.getElementById('studentList');
-    const { data, error } = await supabaseClient
+    let q = supabaseClient
       .from('students')
-      .select('*, profiles(full_name, email)')
-      .order('created_at', { ascending: false });
+      .select('*, profiles(full_name, email)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(studentPage * STUDENT_PAGE, studentPage * STUDENT_PAGE + STUDENT_PAGE - 1);
+    if (studentSearch) {
+      const t = studentSearch.replace(/[%,()]/g, ' ').trim();
+      q = q.or(`full_name.ilike.%${t}%,admission_number.ilike.%${t}%`);
+    }
+    const { data, error, count } = await q;
+    const total = count || 0;
+    const pagerEl = document.getElementById('studentPager');
 
     if (error) {
       listEl.innerHTML = `<p class="placeholder-note">Could not load students: ${escapeHtml(error.message)}</p>`;
       return;
     }
     if (!data || data.length === 0) {
-      listEl.innerHTML = `<p class="placeholder-note">No students added yet.</p>`;
+      listEl.innerHTML = `<p class="placeholder-note">${studentSearch ? 'No student matches that search.' : 'No students added yet.'}</p>`;
+      pagerEl.innerHTML = '';
       return;
     }
+
+    const lastPage = Math.max(0, Math.ceil(total / STUDENT_PAGE) - 1);
+    pagerEl.innerHTML = `
+      <span style="font-size:13.5px;color:#5b6170;">${total} student${total === 1 ? '' : 's'} · page ${studentPage + 1} of ${lastPage + 1}</span>
+      <button class="btn-outline" id="stPrev" style="padding:5px 12px;font-size:13px;" ${studentPage === 0 ? 'disabled' : ''}>&larr; Previous</button>
+      <button class="btn-outline" id="stNext" style="padding:5px 12px;font-size:13px;" ${studentPage >= lastPage ? 'disabled' : ''}>Next &rarr;</button>`;
+    document.getElementById('stPrev').onclick = () => { studentPage--; loadStudents(); };
+    document.getElementById('stNext').onclick = () => { studentPage++; loadStudents(); };
 
     listEl.innerHTML = `
       <table>
         <thead>
-          <tr><th>Name</th><th>Admission No.</th><th>Program</th><th>Parent</th><th></th></tr>
+          <tr><th>Name</th><th>Admission No.</th><th>Program</th><th>Parent</th><th>Passport Photo</th><th></th></tr>
         </thead>
         <tbody>
           ${data.map(s => `
@@ -360,12 +631,49 @@
               <td>${escapeHtml(s.admission_number)}</td>
               <td>${escapeHtml(s.program)}</td>
               <td>${escapeHtml(s.profiles?.full_name || s.profiles?.email || 'Unknown')}</td>
+              <td style="white-space:nowrap;">
+                <img class="st-photo" data-path="${escapeHtml(s.photo_path || '')}" alt="" style="width:38px;height:46px;object-fit:cover;border-radius:4px;background:#e8eef8;vertical-align:middle;display:${s.photo_path ? 'inline-block' : 'none'};">
+                <label class="btn-outline" style="padding:5px 10px;font-size:12.5px;cursor:pointer;display:inline-block;">${s.photo_path ? 'Change' : 'Upload'}<input type="file" accept="image/*" class="photo-input" data-id="${s.id}" style="display:none;"></label>
+              </td>
               <td><button class="btn-outline delete-student-btn" data-id="${s.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     `;
+
+    // Show the saved passport photos
+    const savedPaths = data.filter(s => s.photo_path).map(s => s.photo_path);
+    if (savedPaths.length) {
+      const { data: urls } = await supabaseClient.storage.from('student-photos').createSignedUrls(savedPaths, 3600);
+      (urls || []).forEach(u => {
+        if (!u.signedUrl) return;
+        document.querySelectorAll('.st-photo').forEach(img => {
+          if (img.getAttribute('data-path') === u.path) img.src = u.signedUrl;
+        });
+      });
+    }
+
+    // Upload or replace a passport photo
+    document.querySelectorAll('.photo-input').forEach(inp => {
+      inp.addEventListener('change', async () => {
+        const file = inp.files[0];
+        if (!file) return;
+        const id = inp.getAttribute('data-id');
+        try {
+          const blob = await resizePhoto(file, 500);
+          const path = id + '.jpg';
+          const up = await supabaseClient.storage.from('student-photos')
+            .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+          if (up.error) throw up.error;
+          const upd = await supabaseClient.from('students').update({ photo_path: path }).eq('id', id);
+          if (upd.error) throw upd.error;
+          loadStudents();
+        } catch (err) {
+          alert('Could not save the photo: ' + (err.message || err));
+        }
+      });
+    });
 
     document.querySelectorAll('.delete-student-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -377,6 +685,14 @@
       });
     });
   }
+
+  (function () {
+    let timer = null;
+    document.getElementById('studentSearch').addEventListener('input', (e) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { studentSearch = e.target.value.trim(); studentPage = 0; loadStudents(); }, 350);
+    });
+  })();
 
   document.getElementById('studentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -417,15 +733,263 @@
     loadStudents();
   });
 
+  // ---------- Bulk import ----------
+  (function () {
+    const COLS = ['student_name', 'admission_number', 'program', 'class_name', 'parent_name', 'parent_email', 'parent_phone'];
+    let rows = [];
+
+    function parseCSV(text) {
+      text = text.replace(/^﻿/, '');
+      const out = []; let row = [], cur = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) {
+          if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+          else if (c === '"') q = false;
+          else cur += c;
+        } else if (c === '"') q = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n' || c === '\r') {
+          if (c === '\r' && text[i + 1] === '\n') i++;
+          row.push(cur); cur = '';
+          if (row.some(x => x.trim() !== '')) out.push(row);
+          row = [];
+        } else cur += c;
+      }
+      row.push(cur);
+      if (row.some(x => x.trim() !== '')) out.push(row);
+      return out;
+    }
+
+    function makePassword() {
+      const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const a = new Uint32Array(8); crypto.getRandomValues(a);
+      return Array.from(a, n => chars[n % chars.length]).join('');
+    }
+
+    function download(name, text) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' }));
+      a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    }
+    const csvCell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    window.__csv = { parseCSV, download, csvCell };
+
+    document.getElementById('biTemplate').addEventListener('click', () => {
+      download('student-import-template.csv',
+        COLS.join(',') + '\n' +
+        'Ada Obi,DMA/2026/001,Nursery,Nursery 2,Mrs Chioma Obi,chioma@example.com,08031234567\n' +
+        'Eze Obi,DMA/2026/002,Primary,Primary 1,Mrs Chioma Obi,chioma@example.com,08031234567\n');
+    });
+
+    document.getElementById('biFile').addEventListener('change', async (e) => {
+      const f = e.target.files[0];
+      const prev = document.getElementById('biPreview');
+      const go = document.getElementById('biGo');
+      const note = document.getElementById('biNote');
+      document.getElementById('biResult').innerHTML = '';
+      note.textContent = ''; go.style.display = 'none'; rows = [];
+      if (!f) { prev.innerHTML = ''; return; }
+      const table = parseCSV(await f.text());
+      const head = (table.shift() || []).map(h => h.trim().toLowerCase());
+      const missing = COLS.filter(c => c !== 'class_name' && c !== 'parent_phone' && !head.includes(c));
+      if (missing.length) {
+        prev.innerHTML = '';
+        note.className = 'form-note note-error';
+        note.textContent = 'Your file is missing these column headings: ' + missing.join(', ') + '. Please start from the template.';
+        return;
+      }
+      rows = table.map(r => {
+        const o = {};
+        head.forEach((h, i) => { o[h] = (r[i] || '').trim(); });
+        o.login_shown = o.parent_email;
+        if (!o.parent_email && o.parent_phone) {          // phone-only parent
+          const em = phoneToEmail(o.parent_phone);
+          if (em) { o.parent_email = em; o.login_shown = '0' + normalizeNgPhone(o.parent_phone).slice(3); }
+        }
+        return o;
+      });
+      const phoneOnly = rows.filter(o => o.login_shown && o.login_shown !== o.parent_email).length;
+      prev.innerHTML = `
+        <p style="font-size:14px;margin-bottom:8px;"><b>${rows.length}</b> row(s) found${phoneOnly ? `, <b>${phoneOnly}</b> parent(s) will log in with their phone number` : ''}. First few:</p>
+        <div style="overflow-x:auto;margin-bottom:14px;"><table>
+          <thead><tr>${COLS.map(c => `<th>${c.replace('_', ' ')}</th>`).join('')}</tr></thead>
+          <tbody>${rows.slice(0, 5).map(o => `<tr>${COLS.map(c => `<td>${escapeHtml((c === 'parent_email' ? o.login_shown : o[c]) || '')}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></div>`;
+      if (rows.length) go.style.display = 'inline-block';
+    });
+
+    document.getElementById('biGo').addEventListener('click', async () => {
+      const go = document.getElementById('biGo');
+      const note = document.getElementById('biNote');
+      const session = document.getElementById('biSession').value.trim();
+      const term = document.getElementById('biTerm').value;
+      const hasClass = rows.some(r => r.class_name);
+      if (hasClass && !session) {
+        note.className = 'form-note note-error';
+        note.textContent = 'Your file has a class column, so please type the Session (e.g. 2026/2027) first.';
+        return;
+      }
+      if (!confirm(`Import ${rows.length} row(s) now?`)) return;
+      go.disabled = true; note.className = 'form-note'; note.textContent = '';
+
+      // one password per NEW parent email, same for all of their children
+      const pw = {};
+      rows.forEach(r => { const k = (r.parent_email || '').toLowerCase(); if (k && !pw[k]) pw[k] = makePassword(); });
+
+      const results = [];
+      for (let i = 0; i < rows.length; i += 50) {
+        const chunk = rows.slice(i, i + 50).map(r => ({
+          ...r, password: pw[(r.parent_email || '').toLowerCase()] || ''
+        }));
+        go.textContent = `Importing ${Math.min(i + 50, rows.length)} / ${rows.length}...`;
+        const { data, error } = await supabaseClient.rpc('admin_import_students', {
+          p_rows: chunk, p_term: hasClass ? term : null, p_session: hasClass ? session : null
+        });
+        if (error) {
+          note.className = 'form-note note-error';
+          note.textContent = 'Stopped at row ' + (i + 1) + ': ' + error.message +
+            '. Rows before this point were saved; fix the problem, then import again (existing admission numbers are skipped).';
+          break;
+        }
+        results.push(...data);
+      }
+      go.disabled = false; go.textContent = 'Import';
+
+      const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
+      const created = {};
+      ok.filter(r => r.new_parent).forEach(r => { created[prettyLogin(r.parent_email)] = pw[r.parent_email]; });
+      const nNew = Object.keys(created).length;
+
+      document.getElementById('biResult').innerHTML = `
+        <p style="margin:14px 0 8px;font-size:15px;"><b>${ok.length}</b> student(s) added, <b>${nNew}</b> new parent login(s) created, <b style="color:${bad.length ? 'var(--error)' : 'inherit'}">${bad.length}</b> row(s) skipped.</p>
+        ${nNew ? `<p style="font-size:13.5px;color:#5b6170;margin-bottom:8px;">The passwords are shown only now. Download the list and keep it safe, then hand each parent their login.</p>
+          <button type="button" class="btn-outline" id="biCreds" style="padding:6px 14px;font-size:13px;margin-right:8px;">Download parent logins (CSV)</button>` : ''}
+        ${bad.length ? `<button type="button" class="btn-outline" id="biErrs" style="padding:6px 14px;font-size:13px;">Download skipped rows (CSV)</button>
+          <div style="overflow-x:auto;margin-top:12px;"><table><thead><tr><th>Admission No.</th><th>Why it was skipped</th></tr></thead>
+          <tbody>${bad.slice(0, 50).map(r => `<tr><td>${escapeHtml(r.admission_number)}</td><td>${escapeHtml(r.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+
+      const c = document.getElementById('biCreds');
+      if (c) c.onclick = () => download('parent-logins.csv',
+        'login (email or phone),temporary_password\n' + Object.entries(created).map(([e, p]) => csvCell(e) + ',' + csvCell(p)).join('\n'));
+      const b = document.getElementById('biErrs');
+      if (b) b.onclick = () => download('skipped-rows.csv',
+        'admission_number,parent_email,reason\n' + bad.map(r => [r.admission_number, r.parent_email, r.error].map(csvCell).join(',')).join('\n'));
+
+      studentPage = 0; loadParentOptions(); loadStudents();
+      loadResultStudentOptions(); loadFeeStudentOptions(); loadTermStudentOptions(); loadPrintStudentOptions();
+    });
+  })();
+
+  // ---------- Bulk results upload ----------
+  (function () {
+    const REQUIRED = ['admission_number', 'subject', 'ca', 'exam'];
+    let rows = [];
+    const $ = (id) => document.getElementById(id);
+
+    $('brLoad').addEventListener('click', async () => {
+      const session = $('brSession').value.trim(), term = $('brTerm').value;
+      const note = $('brNote');
+      if (!session) { note.className = 'form-note note-error'; note.textContent = 'Type the Session first.'; return; }
+      note.textContent = '';
+      const { data, error } = await fetchAll(() => supabaseClient.from('term_info')
+        .select('class_name').eq('term', term).eq('session', session).order('class_name', { ascending: true }));
+      if (error) { note.className = 'form-note note-error'; note.textContent = error.message; return; }
+      const names = [...new Set((data || []).map(d => d.class_name))];
+      $('brClass').innerHTML = names.length
+        ? names.map(n => `<option>${escapeHtml(n)}</option>`).join('')
+        : '<option value="">No classes saved for this term yet</option>';
+    });
+
+    $('brSheet').addEventListener('click', async () => {
+      const session = $('brSession').value.trim(), term = $('brTerm').value;
+      const cls = $('brClass').value, subject = $('brSubject').value.trim();
+      const note = $('brNote');
+      if (!session || !cls) { note.className = 'form-note note-error'; note.textContent = 'Type the Session, press "Load classes", then choose a class.'; return; }
+      note.textContent = '';
+      const { data, error } = await fetchAll(() => supabaseClient.from('term_info')
+        .select('students(full_name, admission_number)')
+        .eq('term', term).eq('session', session).eq('class_name', cls));
+      if (error) { note.className = 'form-note note-error'; note.textContent = error.message; return; }
+      const list = (data || []).map(d => d.students).filter(Boolean)
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      const { csvCell, download } = window.__csv;
+      download(`results-${cls.replace(/\W+/g, '-')}-${(subject || 'subject').replace(/\W+/g, '-')}.csv`,
+        'admission_number,student_name,subject,ca,exam,remark\n' +
+        list.map(s => [s.admission_number, s.full_name, subject, '', '', ''].map(csvCell).join(',')).join('\n'));
+    });
+
+    $('brFile').addEventListener('change', async (e) => {
+      const f = e.target.files[0];
+      const note = $('brNote'), go = $('brGo'), prev = $('brPreview');
+      $('brResult').innerHTML = ''; note.textContent = ''; go.style.display = 'none'; rows = [];
+      if (!f) { prev.innerHTML = ''; return; }
+      const table = window.__csv.parseCSV(await f.text());
+      const head = (table.shift() || []).map(h => h.trim().toLowerCase());
+      const missing = REQUIRED.filter(c => !head.includes(c));
+      if (missing.length) {
+        prev.innerHTML = '';
+        note.className = 'form-note note-error';
+        note.textContent = 'Your file is missing these column headings: ' + missing.join(', ') + '. Please use the class sheet or keep the headings: admission_number, subject, ca, exam, remark.';
+        return;
+      }
+      rows = table.map(r => { const o = {}; head.forEach((h, i) => { o[h] = (r[i] || '').trim(); }); return o; })
+        .filter(o => o.admission_number || o.subject || o.ca || o.exam);
+      const empty = rows.filter(o => o.ca === '' && o.exam === '').length;
+      prev.innerHTML = `
+        <p style="font-size:14px;margin-bottom:8px;"><b>${rows.length}</b> row(s) found${empty ? `, <b>${empty}</b> with no scores yet (they will be skipped)` : ''}. First few:</p>
+        <div style="overflow-x:auto;margin-bottom:14px;"><table>
+          <thead><tr><th>Admission no.</th><th>Name</th><th>Subject</th><th>CA</th><th>Exam</th><th>Remark</th></tr></thead>
+          <tbody>${rows.slice(0, 6).map(o => `<tr><td>${escapeHtml(o.admission_number)}</td><td>${escapeHtml(o.student_name || '')}</td><td>${escapeHtml(o.subject)}</td><td>${escapeHtml(o.ca)}</td><td>${escapeHtml(o.exam)}</td><td>${escapeHtml(o.remark || '')}</td></tr>`).join('')}</tbody>
+        </table></div>`;
+      if (rows.length) go.style.display = 'inline-block';
+    });
+
+    $('brGo').addEventListener('click', async () => {
+      const go = $('brGo'), note = $('brNote');
+      const session = $('brSession').value.trim(), term = $('brTerm').value;
+      if (!session) { note.className = 'form-note note-error'; note.textContent = 'Type the Session first (e.g. 2026/2027).'; return; }
+      const todo = rows.filter(o => !(o.ca === '' && o.exam === ''));
+      if (!todo.length) { note.className = 'form-note note-error'; note.textContent = 'No row has a CA or Exam score yet.'; return; }
+      if (!confirm(`Upload ${todo.length} result(s) for ${term}, ${session}?`)) return;
+      go.disabled = true; note.className = 'form-note'; note.textContent = '';
+      const results = [];
+      for (let i = 0; i < todo.length; i += 200) {
+        go.textContent = `Uploading ${Math.min(i + 200, todo.length)} / ${todo.length}...`;
+        const { data, error } = await supabaseClient.rpc('admin_import_results', {
+          p_rows: todo.slice(i, i + 200).map(o => ({ admission_number: o.admission_number, subject: o.subject, ca: o.ca, exam: o.exam, remark: o.remark || '' })),
+          p_term: term, p_session: session
+        });
+        if (error) {
+          note.className = 'form-note note-error';
+          note.textContent = 'Stopped at row ' + (i + 1) + ': ' + error.message + '. Rows before this point were saved; you can upload the same file again safely.';
+          break;
+        }
+        results.push(...data);
+      }
+      go.disabled = false; go.textContent = 'Upload results';
+      const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
+      const added = ok.filter(r => r.action === 'added').length, updated = ok.length - added;
+      $('brResult').innerHTML = `
+        <p style="margin:14px 0 8px;font-size:15px;"><b>${added}</b> result(s) added, <b>${updated}</b> updated, <b style="color:${bad.length ? 'var(--error)' : 'inherit'}">${bad.length}</b> skipped.</p>
+        ${bad.length ? `<button type="button" class="btn-outline" id="brErrs" style="padding:6px 14px;font-size:13px;">Download skipped rows (CSV)</button>
+          <div style="overflow-x:auto;margin-top:12px;"><table><thead><tr><th>Admission no.</th><th>Subject</th><th>Why it was skipped</th></tr></thead>
+          <tbody>${bad.slice(0, 50).map(r => `<tr><td>${escapeHtml(r.admission_number)}</td><td>${escapeHtml(r.subject)}</td><td>${escapeHtml(r.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+      const b = $('brErrs');
+      if (b) b.onclick = () => { const { csvCell, download } = window.__csv;
+        download('skipped-results.csv', 'admission_number,subject,reason\n' + bad.map(r => [r.admission_number, r.subject, r.error].map(csvCell).join(',')).join('\n')); };
+    });
+  })();
+
   // ---------- Results ----------
   let selectedStudentId = null;
 
   async function loadResultStudentOptions() {
     const select = document.getElementById('resStudentSelect');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('students')
       .select('id, full_name, admission_number')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
@@ -435,6 +999,7 @@
     select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('resStudentSelect', 'Type a name or admission number...');
   }
 
   document.getElementById('resStudentSelect').addEventListener('change', (e) => {
@@ -474,7 +1039,7 @@
     listEl.innerHTML = `
       <table>
         <thead>
-          <tr><th>Session</th><th>Term</th><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th><th></th></tr>
+          <tr><th>Session</th><th>Term</th><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Remark</th><th></th></tr>
         </thead>
         <tbody>
           ${data.map(r => `
@@ -482,8 +1047,9 @@
               <td>${escapeHtml(r.session)}</td>
               <td>${escapeHtml(r.term)}</td>
               <td>${escapeHtml(r.subject)}</td>
-              <td>${r.score ?? '-'}</td>
-              <td>${escapeHtml(r.grade || '-')}</td>
+              <td>${r.ca ?? '-'}</td>
+              <td>${r.exam ?? '-'}</td>
+              <td><strong>${r.score ?? '-'}</strong></td>
               <td>${escapeHtml(r.remarks || '-')}</td>
               <td><button class="btn-outline delete-result-btn" data-id="${r.id}" style="padding:5px 12px;font-size:12.5px;border-color:var(--error);color:var(--error);">Delete</button></td>
             </tr>
@@ -503,6 +1069,16 @@
     });
   }
 
+  // Live total next to the CA and Exam boxes
+  function updateResTotal() {
+    const ca = document.getElementById('resCA').value;
+    const exam = document.getElementById('resExam').value;
+    document.getElementById('resTotalPreview').textContent =
+      (ca === '' && exam === '') ? '-' : (Number(ca || 0) + Number(exam || 0));
+  }
+  document.getElementById('resCA').addEventListener('input', updateResTotal);
+  document.getElementById('resExam').addEventListener('input', updateResTotal);
+
   document.getElementById('resultForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!selectedStudentId) return;
@@ -512,13 +1088,13 @@
     const term = document.getElementById('resTerm').value;
     const session = document.getElementById('resSession').value.trim();
     const subject = document.getElementById('resSubject').value.trim();
-    const score = document.getElementById('resScore').value;
-    const grade = document.getElementById('resGrade').value.trim();
+    const ca = document.getElementById('resCA').value;
+    const exam = document.getElementById('resExam').value;
     const remarks = document.getElementById('resRemarks').value.trim();
 
-    if (!session || !subject || !grade) {
+    if (!session || !subject || ca === '' || exam === '') {
       note.className = 'form-note note-error';
-      note.textContent = 'Please fill in session, subject, and grade.';
+      note.textContent = 'Please fill in session, subject, CA and Exam.';
       return;
     }
 
@@ -530,8 +1106,9 @@
     const { error } = await supabaseClient.from('results').insert({
       student_id: selectedStudentId,
       term, session, subject,
-      score: score ? Number(score) : null,
-      grade, remarks
+      ca: Number(ca),
+      exam: Number(exam),
+      remarks
     });
 
     btn.disabled = false;
@@ -546,10 +1123,139 @@
     note.className = 'form-note note-success';
     note.textContent = 'Result added!';
     document.getElementById('resSubject').value = '';
-    document.getElementById('resScore').value = '';
-    document.getElementById('resGrade').value = '';
+    document.getElementById('resCA').value = '';
+    document.getElementById('resExam').value = '';
     document.getElementById('resRemarks').value = '';
+    document.getElementById('resTotalPreview').textContent = '-';
+    document.getElementById('resSubject').focus();
     loadResults();
+  });
+
+  // ---------- Term details & ratings ----------
+  const AFFECTIVE_TRAITS = ['Attentiveness', 'Attitude to School Work', 'Completes Work Promptly', 'Honesty',
+    'Mental Alertness', 'Neatness', 'Politeness', 'Punctuality', 'Relationship w/ Peers', 'Respect', 'Spirit of Team Work'];
+  const PSYCHOMOTOR_SKILLS = ['Creative Arts', 'General Reasoning', 'Handwriting', 'Musical Skills',
+    'Physical Education', 'Reading', 'Verbal Fluency/Diction'];
+
+  function buildRatingSelects(containerId, group, names) {
+    document.getElementById(containerId).innerHTML = names.map(n => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #eef2f8;padding:4px 0;">
+        <span style="font-size:14px;">${escapeHtml(n)}</span>
+        <select class="rating-select" data-group="${group}" data-trait="${escapeHtml(n)}" style="font-family:inherit;font-size:14px;padding:6px 8px;border:2px solid #cfd8e8;border-radius:6px;">
+          <option value="">-</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+        </select>
+      </div>`).join('');
+  }
+  buildRatingSelects('tdAffective', 'affective', AFFECTIVE_TRAITS);
+  buildRatingSelects('tdPsycho', 'psychomotor', PSYCHOMOTOR_SKILLS);
+
+  async function loadTermStudentOptions() {
+    const select = document.getElementById('tdStudent');
+    const { data, error } = await fetchAll(() => supabaseClient
+      .from('students').select('id, full_name, admission_number').order('full_name', { ascending: true }));
+    if (error || !data || data.length === 0) {
+      select.innerHTML = '<option value="">No students added yet</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">- Choose a student -</option>' + data.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
+    ).join('');
+    addFilterBox('tdStudent', 'Type a name or admission number...');
+  }
+
+  const numOrNull = (v) => (v === '' || v === null || v === undefined) ? null : Number(v);
+  const setVal = (id, v) => { document.getElementById(id).value = (v === null || v === undefined) ? '' : v; };
+
+  async function loadTermInfo() {
+    const student_id = document.getElementById('tdStudent').value;
+    const term = document.getElementById('tdTerm').value;
+    const session = document.getElementById('tdSession').value.trim();
+    const form = document.getElementById('termForm');
+    const hint = document.getElementById('tdHint');
+    document.getElementById('termNote').textContent = '';
+
+    if (!student_id || !session) {
+      form.style.display = 'none';
+      hint.style.display = '';
+      return;
+    }
+    const { data, error } = await supabaseClient.from('term_info').select('*')
+      .eq('student_id', student_id).eq('term', term).eq('session', session).maybeSingle();
+    if (error) {
+      hint.style.display = '';
+      hint.textContent = 'Could not load: ' + error.message + ' (did you run the report card SQL script?)';
+      form.style.display = 'none';
+      return;
+    }
+    hint.style.display = 'none';
+    form.style.display = '';
+
+    const d = data || {};
+    setVal('tdClass', d.class_name); setVal('tdAge', d.age); setVal('tdTeacher', d.teacher_name);
+    setVal('tdW1', d.weight_start); setVal('tdW2', d.weight_end);
+    setVal('tdH1', d.height_start); setVal('tdH2', d.height_end);
+    setVal('tdOpened', d.times_opened); setVal('tdAbsent', d.times_absent);
+    setVal('tdStatus', d.status);
+    setVal('tdOverall', d.overall_remark); setVal('tdTeacherRemark', d.class_teacher_remark); setVal('tdHeadRemark', d.head_remark);
+    document.querySelectorAll('.rating-select').forEach(sel => {
+      const group = (sel.getAttribute('data-group') === 'affective' ? d.affective : d.psychomotor) || {};
+      sel.value = group[sel.getAttribute('data-trait')] || '';
+    });
+    if (!data) {
+      // New record: carry over class and teacher from the child's most recent term to save typing
+      const prev = await supabaseClient.from('term_info').select('class_name, teacher_name, age')
+        .eq('student_id', student_id).order('created_at', { ascending: false }).limit(1);
+      if (prev.data && prev.data[0]) {
+        setVal('tdClass', prev.data[0].class_name);
+        setVal('tdTeacher', prev.data[0].teacher_name);
+        setVal('tdAge', prev.data[0].age);
+      }
+    }
+  }
+  ['tdStudent', 'tdTerm'].forEach(id => document.getElementById(id).addEventListener('change', loadTermInfo));
+  document.getElementById('tdSession').addEventListener('change', loadTermInfo);
+
+  document.getElementById('termForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = document.getElementById('termNote');
+    const btn = document.getElementById('saveTermBtn');
+    const student_id = document.getElementById('tdStudent').value;
+    const term = document.getElementById('tdTerm').value;
+    const session = document.getElementById('tdSession').value.trim();
+    const class_name = document.getElementById('tdClass').value.trim();
+    if (!student_id || !session || !class_name) {
+      note.className = 'form-note note-error';
+      note.textContent = 'Please choose a student, type the session and fill in the class.';
+      return;
+    }
+    const affective = {}, psychomotor = {};
+    document.querySelectorAll('.rating-select').forEach(sel => {
+      if (!sel.value) return;
+      (sel.getAttribute('data-group') === 'affective' ? affective : psychomotor)[sel.getAttribute('data-trait')] = sel.value;
+    });
+
+    btn.disabled = true; btn.textContent = 'Saving...';
+    note.className = 'form-note'; note.textContent = '';
+    const { error } = await supabaseClient.from('term_info').upsert({
+      student_id, term, session, class_name,
+      age: numOrNull(document.getElementById('tdAge').value),
+      teacher_name: document.getElementById('tdTeacher').value.trim() || null,
+      weight_start: numOrNull(document.getElementById('tdW1').value),
+      weight_end: numOrNull(document.getElementById('tdW2').value),
+      height_start: numOrNull(document.getElementById('tdH1').value),
+      height_end: numOrNull(document.getElementById('tdH2').value),
+      times_opened: numOrNull(document.getElementById('tdOpened').value),
+      times_absent: numOrNull(document.getElementById('tdAbsent').value),
+      status: document.getElementById('tdStatus').value || null,
+      overall_remark: document.getElementById('tdOverall').value.trim() || null,
+      class_teacher_remark: document.getElementById('tdTeacherRemark').value.trim() || null,
+      head_remark: document.getElementById('tdHeadRemark').value.trim() || null,
+      affective, psychomotor
+    }, { onConflict: 'student_id,term,session' });
+    btn.disabled = false; btn.textContent = 'Save Term Details';
+    if (error) { note.className = 'form-note note-error'; note.textContent = error.message; return; }
+    note.className = 'form-note note-success';
+    note.textContent = 'Saved!';
   });
 
   // ---------- Fees ----------
@@ -557,10 +1263,10 @@
 
   async function loadFeeStudentOptions() {
     const select = document.getElementById('feeStudentSelect');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('students')
       .select('id, full_name, admission_number')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
@@ -570,6 +1276,7 @@
     select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('feeStudentSelect', 'Type a name or admission number...');
   }
 
   document.getElementById('feeStudentSelect').addEventListener('change', (e) => {
@@ -693,10 +1400,10 @@
   // ---------- Print Report Card (no on-screen preview) ----------
   async function loadPrintStudentOptions() {
     const select = document.getElementById('printStudentSelect');
-    const { data, error } = await supabaseClient
+    const { data, error } = await fetchAll(() => supabaseClient
       .from('students')
       .select('id, full_name, admission_number, program')
-      .order('full_name', { ascending: true });
+      .order('full_name', { ascending: true }));
 
     if (error || !data || data.length === 0) {
       select.innerHTML = '<option value="">No students added yet</option>';
@@ -707,6 +1414,7 @@
     select.innerHTML = '<option value="">— Choose a student —</option>' + data.map(s =>
       `<option value="${s.id}">${escapeHtml(s.full_name)} (${escapeHtml(s.admission_number)})</option>`
     ).join('');
+    addFilterBox('printStudentSelect', 'Type a name or admission number...');
   }
 
   document.getElementById('printStudentSelect').addEventListener('change', async (e) => {
@@ -782,47 +1490,15 @@
     printReportCard({ session, term, rows: data }, child);
   });
 
-  function printReportCard(group, child) {
-    const avg = (group.rows.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / group.rows.length).toFixed(1);
-    const printArea = document.getElementById('printArea');
-    printArea.innerHTML = `
-      <div class="report-card">
-        <div class="rc-header">
-          <div class="rc-badge">D</div>
-          <div class="rc-school-name">Dignity Mathematics Academy</div>
-          <div class="rc-address">46 Ogbudike Street, Okpoko, Onitsha, Anambra State</div>
-          <div class="rc-title">Student Report Card</div>
-        </div>
-        <div class="rc-info">
-          <div><b>Student:</b> ${escapeHtml(child ? child.full_name : 'Unknown')}</div>
-          <div><b>Admission No.:</b> ${escapeHtml(child ? child.admission_number : '-')}</div>
-          <div><b>Program:</b> ${escapeHtml(child ? child.program : '-')}</div>
-          <div><b>Term / Session:</b> ${escapeHtml(group.term)} — ${escapeHtml(group.session)}</div>
-        </div>
-        <table>
-          <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead>
-          <tbody>
-            ${group.rows.map(r => `
-              <tr>
-                <td>${escapeHtml(r.subject)}</td>
-                <td>${r.score ?? '-'}</td>
-                <td>${escapeHtml(r.grade || '-')}</td>
-                <td>${escapeHtml(r.remarks || '-')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <div class="rc-info" style="margin-top:16px;">
-          <div><b>Average Score:</b> ${avg}</div>
-          <div><b>Printed on:</b> ${formatDate(new Date().toISOString())}</div>
-        </div>
-        <div class="rc-footer">
-          <div class="rc-signature">Class Teacher</div>
-          <div class="rc-signature">Head Teacher</div>
-        </div>
-      </div>
-    `;
-    window.print();
+  // Prints the school's progress report layout (see report-card.js)
+  async function printReportCard(group, child) {
+    const note = document.getElementById('printNote');
+    const studentId = child ? child.id : group.student_id;
+    const problem = await printSchoolReportCard(studentId, group.term, group.session);
+    if (problem) {
+      if (note) { note.className = 'form-note note-error'; note.textContent = problem; }
+      else { alert(problem); }
+    }
   }
 </script>
 

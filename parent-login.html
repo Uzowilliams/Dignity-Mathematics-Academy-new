@@ -7,6 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Fredoka:wght@600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal-style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/img/favicon-16.png">
+  <link rel="shortcut icon" href="../assets/img/favicon.ico">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+  <meta name="theme-color" content="#1565D8">
 </head>
 <body>
 
@@ -23,8 +29,8 @@
   <p class="sub">Sign in to view your child's results, fees, and school announcements.</p>
   <form id="loginForm">
     <div class="field">
-      <label for="email">Email</label>
-      <input type="email" id="email" required placeholder="you@email.com">
+      <label for="email">Email or phone number</label>
+      <input type="text" id="email" required autocomplete="username" placeholder="you@email.com or 08031234567">
     </div>
     <div class="field">
       <label for="password">Password</label>
@@ -60,8 +66,21 @@
     btn.disabled = true;
     btn.textContent = 'Signing in...';
 
-    const email = document.getElementById('email').value.trim();
+    let email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+
+    // No "@" means the parent typed a phone number
+    if (!email.includes('@')) {
+      const converted = phoneToEmail(email);
+      if (!converted) {
+        note.className = 'form-note note-error';
+        note.textContent = 'Please type a valid phone number (like 08031234567) or your email address.';
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+        return;
+      }
+      email = converted;
+    }
 
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
