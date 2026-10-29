@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/img/favicon-16.png">
   <link rel="shortcut icon" href="../assets/img/favicon.ico">
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
-  <meta name="theme-color" content="#1E7D3C">
+  <meta name="theme-color" content="#1565D8">
 </head>
 <body>
 
@@ -58,7 +58,7 @@
   <div class="card">
     <h2>Bulk Import Students</h2>
     <p style="font-size:14px;color:#5b6170;margin-bottom:14px;">
-      Add many students (old and new) at once from an Excel/CSV file. Parent logins are created automatically for new parents, and brothers and sisters with the same parent email share one login.
+      Add many students (old and new) at once from an Excel/CSV file. Parent logins are created automatically for new parents, and brothers and sisters with the same parent email share one login. <b>If a parent has no email, leave parent_email empty and fill parent_phone</b>: the phone number becomes their login.
     </p>
     <ol style="font-size:14px;color:#5b6170;margin:0 0 14px 18px;line-height:1.7;">
       <li><button type="button" class="btn-outline" id="biTemplate" style="padding:4px 12px;font-size:13px;">Download the template</button> and open it in Excel.</li>
@@ -558,7 +558,7 @@
     }
 
     select.innerHTML = data.map(p =>
-      `<option value="${p.id}">${escapeHtml(p.full_name || 'Unnamed')} (${escapeHtml(p.email || 'no email')})</option>`
+      `<option value="${p.id}">${escapeHtml(p.full_name || 'Unnamed')} (${escapeHtml(prettyLogin(p.email) || 'no email')})</option>`
     ).join('');
     addFilterBox('stParent', 'Type a parent name or email...');
   }
@@ -802,13 +802,19 @@
       rows = table.map(r => {
         const o = {};
         head.forEach((h, i) => { o[h] = (r[i] || '').trim(); });
+        o.login_shown = o.parent_email;
+        if (!o.parent_email && o.parent_phone) {          // phone-only parent
+          const em = phoneToEmail(o.parent_phone);
+          if (em) { o.parent_email = em; o.login_shown = '0' + normalizeNgPhone(o.parent_phone).slice(3); }
+        }
         return o;
       });
+      const phoneOnly = rows.filter(o => o.login_shown && o.login_shown !== o.parent_email).length;
       prev.innerHTML = `
-        <p style="font-size:14px;margin-bottom:8px;"><b>${rows.length}</b> row(s) found. First few:</p>
+        <p style="font-size:14px;margin-bottom:8px;"><b>${rows.length}</b> row(s) found${phoneOnly ? `, <b>${phoneOnly}</b> parent(s) will log in with their phone number` : ''}. First few:</p>
         <div style="overflow-x:auto;margin-bottom:14px;"><table>
           <thead><tr>${COLS.map(c => `<th>${c.replace('_', ' ')}</th>`).join('')}</tr></thead>
-          <tbody>${rows.slice(0, 5).map(o => `<tr>${COLS.map(c => `<td>${escapeHtml(o[c] || '')}</td>`).join('')}</tr>`).join('')}</tbody>
+          <tbody>${rows.slice(0, 5).map(o => `<tr>${COLS.map(c => `<td>${escapeHtml((c === 'parent_email' ? o.login_shown : o[c]) || '')}</td>`).join('')}</tr>`).join('')}</tbody>
         </table></div>`;
       if (rows.length) go.style.display = 'inline-block';
     });
@@ -852,7 +858,7 @@
 
       const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
       const created = {};
-      ok.filter(r => r.new_parent).forEach(r => { created[r.parent_email] = pw[r.parent_email]; });
+      ok.filter(r => r.new_parent).forEach(r => { created[prettyLogin(r.parent_email)] = pw[r.parent_email]; });
       const nNew = Object.keys(created).length;
 
       document.getElementById('biResult').innerHTML = `
@@ -865,7 +871,7 @@
 
       const c = document.getElementById('biCreds');
       if (c) c.onclick = () => download('parent-logins.csv',
-        'parent_email,temporary_password\n' + Object.entries(created).map(([e, p]) => csvCell(e) + ',' + csvCell(p)).join('\n'));
+        'login (email or phone),temporary_password\n' + Object.entries(created).map(([e, p]) => csvCell(e) + ',' + csvCell(p)).join('\n'));
       const b = document.getElementById('biErrs');
       if (b) b.onclick = () => download('skipped-rows.csv',
         'admission_number,parent_email,reason\n' + bad.map(r => [r.admission_number, r.parent_email, r.error].map(csvCell).join(',')).join('\n'));

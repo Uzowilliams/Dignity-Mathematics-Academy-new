@@ -36,3 +36,27 @@ async function logout(redirectTo) {
   await supabaseClient.auth.signOut();
   window.location.href = redirectTo;
 }
+
+
+// ---- Phone-number logins (for parents who have no email) ----
+// A parent's phone number is turned into a hidden "login email" like
+// ph2348031234567@uzoholdings.online. No mail is ever sent to it. The parent just types the phone number.
+const PHONE_LOGIN_DOMAIN = 'uzoholdings.online';
+
+// "0803 123 4567", "+234 803 123 4567", "8031234567"  ->  "2348031234567"  (or null if it is not a valid number)
+function normalizeNgPhone(input) {
+  const d = String(input || '').replace(/\D/g, '');
+  if (d.length === 13 && d.startsWith('234')) return d;
+  if (d.length === 11 && d.startsWith('0')) return '234' + d.slice(1);
+  if (d.length === 10) return '234' + d;
+  return null;
+}
+function phoneToEmail(input) {
+  const n = normalizeNgPhone(input);
+  return n ? 'ph' + n + '@' + PHONE_LOGIN_DOMAIN : null;
+}
+// Shows a hidden phone login as the phone number (0803...) and leaves real emails alone
+function prettyLogin(email) {
+  const m = String(email || '').match(/^ph234(\d{10})@/i);
+  return m ? '0' + m[1] : (email || '');
+}
